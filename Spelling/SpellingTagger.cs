@@ -60,6 +60,8 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         object _dirtySpanLock = new object();
         volatile List<MisspellingTag> _misspellings;
 
+        Thread _updateThread;
+
         DispatcherTimer _timer;
 
         public SpellingTagger(ITextBuffer buffer, ITagAggregator<NaturalTextTag> naturalTextTagger, ISpellingDictionaryService dictionary)
@@ -73,7 +75,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             _misspellings = new List<MisspellingTag>();
 
             _buffer.Changed += BufferChanged;
-
+            _naturalTextTagger.TagsChanged += NaturalTagsChanged;
             _dictionary.DictionaryUpdated += DictionaryUpdated;
 
             // To start with, the entire buffer is dirty
@@ -82,6 +84,22 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
             foreach (var line in snapshot.Lines)
                 AddDirtySpan(line.Extent);
+        }
+
+        void NaturalTagsChanged(object sender, TagsChangedEventArgs e)
+        {
+            NormalizedSnapshotSpanCollection dirtySpans = e.Span.GetSpans(_buffer.CurrentSnapshot);
+
+            if (dirtySpans.Count == 0)
+                return;
+
+            SnapshotSpan dirtySpan = new SnapshotSpan(_buffer.CurrentSnapshot, dirtySpans[0].Start, dirtySpans[dirtySpans.Count - 1].End);
+
+            AddDirtySpan(dirtySpan);
+
+            var temp = TagsChanged;
+            if (temp != null)
+                temp(this, new SnapshotSpanEventArgs(dirtySpan));
         }
 
         void DictionaryUpdated(object sender, SpellingEventArgs e)
@@ -115,12 +133,29 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         #region Helpers
 
+        NormalizedSnapshotSpanCollection GetNaturalLanguageSpansForDirtySpan(SnapshotSpan dirtySpan)
+        {
+            if (dirtySpan.IsEmpty)
+                return new NormalizedSnapshotSpanCollection();
+
+            ITextSnapshot snapshot = dirtySpan.Snapshot;
+            return new NormalizedSnapshotSpanCollection(_naturalTextTagger.GetTags(dirtySpan)
+                                                                          .SelectMany(tag => tag.Span.GetSpans(snapshot))
+                                                                          .Select(s => s.Intersection(dirtySpan))
+                                                                          .Where(s => s.HasValue && !s.Value.IsEmpty)
+                                                                          .Select(s => s.Value));                    
+        }
 
         void AddDirtySpan(SnapshotSpan span)
         {
+            var naturalLanguageSpans = GetNaturalLanguageSpansForDirtySpan(span);
+
+            if (naturalLanguageSpans.Count == 0)
+                return;
+
             lock (_dirtySpanLock)
             {
-                _dirtySpans.Add(span);
+                _dirtySpans.AddRange(naturalLanguageSpans);
                 ScheduleUpdate();
             }
         }
@@ -136,18 +171,22 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
                 _timer.Tick += (sender, args) =>
                 {
+                    // If an update is currently running, wait until the next timer tick
+                    if (_updateThread != null && _updateThread.IsAlive)
+                        return;
+
                     _timer.Stop();
 
-                    Thread thread = new Thread(CheckSpellings)
+                    _updateThread = new Thread(CheckSpellings)
                     {
                         Name = "Spell Check",
-                        Priority = ThreadPriority.BelowNormal
+                        Priority = ThreadPriority.Normal
                     };
 
-                    if (!thread.TrySetApartmentState(ApartmentState.STA))
+                    if (!_updateThread.TrySetApartmentState(ApartmentState.STA))
                         Debug.Fail("Unable to set thread apartment state to STA, things *will* break.");
 
-                    thread.Start();
+                    _updateThread.Start();
                 };
             }
 
@@ -188,28 +227,16 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 List<MisspellingTag> currentMisspellings = _misspellings;
                 List<MisspellingTag> newMisspellings = new List<MisspellingTag>();
 
-                int removed = 0;
-
-                foreach (var naturalTextTag in _naturalTextTagger.GetTags(dirtySpan))
-                {
-                    var naturalTextSpans = naturalTextTag.Span.GetSpans(snapshot);
-
-                    foreach (var span in naturalTextSpans)
-                    {
-                        removed += currentMisspellings.RemoveAll(tag => tag.ToTagSpan(snapshot).Span.OverlapsWith(span));
-
-                        newMisspellings.AddRange(GetMisspellingsInSpan(span, textBox));
-                    }
-                }
-
+                int removed = currentMisspellings.RemoveAll(tag => tag.ToTagSpan(snapshot).Span.OverlapsWith(dirtySpan));
+                newMisspellings.AddRange(GetMisspellingsInSpan(dirtySpan, textBox));
+               
                 // Also remove empties
-                removed += currentMisspellings.RemoveAll(tag => tag.ToTagSpan(snapshot).Span.Length == 0);
+                removed += currentMisspellings.RemoveAll(tag => tag.ToTagSpan(snapshot).Span.IsEmpty);
 
                 // If anything has been updated, we need to send out a change event
                 if (newMisspellings.Count != 0 || removed != 0)
                 {
                     currentMisspellings.AddRange(newMisspellings);
-                    SnapshotSpan changedSpan = new SnapshotSpan(dirty[0].Start, dirty[dirty.Count - 1].End);
 
                     _dispatcher.Invoke(new Action(() =>
                         {
@@ -217,7 +244,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
                             var temp = TagsChanged;
                             if (temp != null)
-                                temp(this, new SnapshotSpanEventArgs(changedSpan));
+                                temp(this, new SnapshotSpanEventArgs(dirtySpan));
 
                         }));
                 }

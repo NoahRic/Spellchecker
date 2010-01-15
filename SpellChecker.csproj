@@ -96,6 +96,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="ms-pl.txt" />
+    <Content Include="spell-icon.png">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="spell-screenshot.png">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <Content Include="SpellChecker.pkgdef">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
