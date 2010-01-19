@@ -39,7 +39,6 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         {
             _span = span;
             _replaceWith = replaceWith;
-            IsEnabled = enabled;
         }
         #region ISmartTagAction
         /// <summary>
@@ -71,8 +70,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// </summary>
         public bool IsEnabled
         {
-            get;
-            private set;
+            get { return true; }
         }
 
         /// <summary>

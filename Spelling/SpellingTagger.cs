@@ -267,19 +267,40 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 if (text[i] == ' ' || text[i] == '\t' || text[i] == '\r' || text[i] == '\n')
                     continue;
 
-                // We've found a word (or something)
-                // Scan until the next whitespace
+                // We've found a word (or something), so search for the next piece of whitespace or punctuation to get the entire word span.
+                // However, we will ignore words that are CamelCased, since those are probably not "real" words to begin with.
                 int end = i;
+                bool foundLower = false;
+                bool ignoreWord = false;
                 for (; end < text.Length; end++)
                 {
-                    if (text[end] == ' ' || text[end] == '\t' || text[end] == '\r' || text[end] == '\n')
+                    char c = text[end];
+
+                    if (c == ' ' || c == '\t' || c == '\r' || c == '\n')
                         break;
+
+                    if (!ignoreWord)
+                    {
+                        bool isUppercase = char.IsUpper(c);
+
+                        if (foundLower && isUppercase)
+                            ignoreWord = true;
+
+                        foundLower = !isUppercase;
+                    }
                 }
 
-                string wordsToParse = text.Substring(i, end - i);
+                // Skip this word and move on to the next
+                if (ignoreWord)
+                {
+                    i = end - 1;
+                    continue;
+                }
+
+                string textToParse = text.Substring(i, end - i);
 
                 // Now pass these off to WPF
-                textBox.Text = wordsToParse;
+                textBox.Text = textToParse;
 
                 int nextSearchIndex = 0;
                 int nextSpellingErrorIndex = -1;
@@ -301,7 +322,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                     }
 
                     nextSearchIndex = nextSpellingErrorIndex + length;
-                    if (nextSearchIndex >= wordsToParse.Length)
+                    if (nextSearchIndex >= textToParse.Length)
                         break;
                 }
 

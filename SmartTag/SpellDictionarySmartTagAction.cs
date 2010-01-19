@@ -36,12 +36,10 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// <param name="span">Word to add to dictionary.</param>
         /// <param name="dictionary">The dictionary (used to ignore the word).</param>
         /// <param name="displayText">Text to show in the context menu for this action.</param>
-        /// <param name="enabled">Sets if this action is enabled.</param>
-        public SpellDictionarySmartTagAction(ITrackingSpan span, ISpellingDictionaryService dictionary, string displayText, bool enabled)
+        public SpellDictionarySmartTagAction(ITrackingSpan span, ISpellingDictionaryService dictionary, string displayText)
         {
             _span = span;
             _dictionary = dictionary;
-            IsEnabled = enabled;
             DisplayText = displayText;
         }
         # endregion
@@ -77,8 +75,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// </summary>
         public bool IsEnabled
         {
-            get;
-            private set;
+            get { return true; }
         }
 
         /// <summary>

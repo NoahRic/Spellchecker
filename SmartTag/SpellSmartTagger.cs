@@ -164,7 +164,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
             // Add Dictionary operations (ignore all)
             List<ISmartTagAction> dictionaryActions = new List<ISmartTagAction>();
-            dictionaryActions.Add(new SpellDictionarySmartTagAction(trackingSpan, _dictionary, "Ignore All", true));
+            dictionaryActions.Add(new SpellDictionarySmartTagAction(trackingSpan, _dictionary, "Ignore All"));
             smartTagSets.Add(new SmartTagActionSet(dictionaryActions.AsReadOnly()));
 
             return smartTagSets.AsReadOnly(); ;
