@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.VisualStudio.Text.Tagging;
-using Microsoft.VisualStudio.Text;
 using System.ComponentModel.Composition;
-using Microsoft.VisualStudio.Utilities;
-using System.Threading;
-using System.Windows.Threading;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Threading;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Tagging;
+using Microsoft.VisualStudio.Utilities;
 
 namespace Microsoft.VisualStudio.Language.Spellchecker
 {
@@ -180,7 +179,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                     _updateThread = new Thread(CheckSpellings)
                     {
                         Name = "Spell Check",
-                        Priority = ThreadPriority.Normal
+                        Priority = ThreadPriority.BelowNormal
                     };
 
                     if (!_updateThread.TrySetApartmentState(ApartmentState.STA))
