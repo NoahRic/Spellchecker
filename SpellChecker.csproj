@@ -85,7 +85,7 @@
     <Compile Include="Spelling\IMisspellingTag.cs" />
     <Compile Include="Spelling\SpellingTagger.cs" />
     <Compile Include="Spelling\WpfSpellchecker.cs" />
-    <Compile Include="SquiggleTagger.cs" />
+    <Compile Include="Squiggles\SquiggleTagger.cs" />
     <Compile Include="Properties\FxCopSuppressions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

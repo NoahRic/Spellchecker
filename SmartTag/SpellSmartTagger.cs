@@ -92,6 +92,21 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                     foreach (var span in args.Span.GetSpans(_buffer))
                         RaiseTagsChangedEvent(span);
                 };
+
+            // BUG WORKAROUND:
+            // There is a bug in the smart tag controller than handles taggers like this, where smart tags aren't getting
+            // dismissed when the text they are over is deleted, causing smart tags that should have disappeared to stick
+            // around, sometimes indefinitely.  This works around the problem by forcing that controller to constantly refresh smart tags over
+            // the text that is changing, which may end up being costly.
+            //
+            // This will be fixed in RTM, so it can be removed at that time.
+            _buffer.Changed += (sender, args) =>
+                {
+                    foreach (var change in args.Changes)
+                    {
+                        RaiseTagsChangedEvent(new SnapshotSpan(args.After, change.NewSpan));
+                    }
+                };
         }
 
         #region ITagger<SpellSmartTag> Members
