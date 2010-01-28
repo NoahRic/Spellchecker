@@ -96,7 +96,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ms-pl.txt" />
+    <Content Include="ms-pl.txt">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <Content Include="spell-icon.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
