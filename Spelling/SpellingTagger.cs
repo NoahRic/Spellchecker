@@ -252,7 +252,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             lock (_dirtySpanLock)
             {
                 if (_dirtySpans.Count != 0)
-                    _dispatcher.Invoke(new Action(() => ScheduleUpdate()));
+                    _dispatcher.BeginInvoke(new Action(() => ScheduleUpdate()));
             }
         }
         
