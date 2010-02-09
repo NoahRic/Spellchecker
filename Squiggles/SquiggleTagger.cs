@@ -28,7 +28,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
     /// <summary>
     /// Squiggle tag for misspelled words.
     /// </summary>
-    internal class SpellSquiggleTag : SquiggleTag
+    internal class SpellSquiggleTag : ErrorTag
     {
         public SpellSquiggleTag(string squiggleType, object toolTipContent) : base(squiggleType, toolTipContent) { }
     }
@@ -36,7 +36,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
     /// <summary>
     /// Tagger for Spelling squiggles.
     /// </summary>
-    internal class SquiggleTagger : ITagger<SquiggleTag>, IDisposable
+    internal class SquiggleTagger : ITagger<IErrorTag>, IDisposable
     {
         #region Private Fields
         private ITextBuffer _buffer;
@@ -113,7 +113,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// </summary>
         /// <param name="spans">Spans collection to get tags for.</param>
         /// <returns>Squiggle tags in provided spans.</returns>
-        public IEnumerable<ITagSpan<SquiggleTag>> GetTags(NormalizedSnapshotSpanCollection spans)
+        public IEnumerable<ITagSpan<IErrorTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
             if (spans.Count == 0)
                 yield break;
@@ -128,7 +128,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
                 SnapshotSpan errorSpan = misspellingSpans[0];
 
-                yield return new TagSpan<SquiggleTag>(
+                yield return new TagSpan<IErrorTag>(
                                 errorSpan,
                                 new SpellSquiggleTag(SquiggleTagger.SpellingErrorType, errorSpan.GetText()));
             }
