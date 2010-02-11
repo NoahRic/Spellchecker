@@ -176,7 +176,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
                     _timer.Stop();
 
-                    _updateThread = new Thread(CheckSpellings)
+                    _updateThread = new Thread(GuardedCheckSpellings)
                     {
                         Name = "Spell Check",
                         Priority = ThreadPriority.BelowNormal
@@ -193,7 +193,21 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             _timer.Start();
         }
 
-        void CheckSpellings(object obj)
+        void GuardedCheckSpellings(object obj)
+        {
+            try
+            {
+                CheckSpellings();
+            }
+            catch (Exception)
+            {
+                // If anything fails in the background thread, just ignore it.  It's possible that the background thread will run
+                // on VS shutdown, at which point calls into WPF throw exceptions.  If we don't guard against those exceptions, the
+                // user will see a crash on exit.
+            }
+        }
+
+        void CheckSpellings()
         {
             TextBox textBox = new TextBox();
             textBox.SpellCheck.IsEnabled = true;
