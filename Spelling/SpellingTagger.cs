@@ -50,12 +50,19 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
     sealed class SpellingTagger : ITagger<IMisspellingTag>
     {
+        struct DirtySpan
+        {
+            public SnapshotSpan Span;
+            public NormalizedSnapshotSpanCollection NaturalTextSpans;
+        }
+
         ITextBuffer _buffer;
         ITagAggregator<NaturalTextTag> _naturalTextTagger;
         Dispatcher _dispatcher;
         ISpellingDictionaryService _dictionary;
-        
-        List<SnapshotSpan> _dirtySpans;
+
+        List<DirtySpan> _dirtySpans;
+
         object _dirtySpanLock = new object();
         volatile List<MisspellingTag> _misspellings;
 
@@ -70,7 +77,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             _dispatcher = Dispatcher.CurrentDispatcher;
             _dictionary = dictionary;
 
-            _dirtySpans = new List<SnapshotSpan>();
+            _dirtySpans = new List<DirtySpan>();
             _misspellings = new List<MisspellingTag>();
 
             _buffer.Changed += BufferChanged;
@@ -147,14 +154,16 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         void AddDirtySpan(SnapshotSpan span)
         {
+            if (span.IsEmpty)
+                return;
+
             var naturalLanguageSpans = GetNaturalLanguageSpansForDirtySpan(span);
 
-            if (naturalLanguageSpans.Count == 0)
-                return;
+            DirtySpan dirty = new DirtySpan() { NaturalTextSpans = naturalLanguageSpans, Span = span };
 
             lock (_dirtySpanLock)
             {
-                _dirtySpans.AddRange(naturalLanguageSpans);
+                _dirtySpans.Add(dirty);
                 ScheduleUpdate();
             }
         }
@@ -212,7 +221,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             TextBox textBox = new TextBox();
             textBox.SpellCheck.IsEnabled = true;
 
-            IList<SnapshotSpan> dirtySpans;
+            IList<DirtySpan> dirtySpans;
 
             lock (_dirtySpanLock)
             {
@@ -220,28 +229,23 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 if (dirtySpans.Count == 0)
                     return;
 
-                _dirtySpans = new List<SnapshotSpan>();
+                _dirtySpans = new List<DirtySpan>();
             }
 
             ITextSnapshot snapshot = _buffer.CurrentSnapshot;
 
-            NormalizedSnapshotSpanCollection dirty = new NormalizedSnapshotSpanCollection(
-                dirtySpans.Select(span => span.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive)));
-
-            if (dirty.Count == 0)
-            {
-                Debug.Fail("The list of dirty spans is empty when normalized, which shouldn't be possible.");
-                return;
-            }
-
             // Break up dirty into component pieces, so we produce incremental updates
-            foreach (var dirtySpan in dirty)
+            foreach (var dirtySpan in dirtySpans)
             {
+                var dirty = dirtySpan.Span.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive);
+                var naturalText = new NormalizedSnapshotSpanCollection(
+                    dirtySpan.NaturalTextSpans.Select(span => span.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive)));
+
                 List<MisspellingTag> currentMisspellings = _misspellings;
                 List<MisspellingTag> newMisspellings = new List<MisspellingTag>();
 
-                int removed = currentMisspellings.RemoveAll(tag => tag.ToTagSpan(snapshot).Span.OverlapsWith(dirtySpan));
-                newMisspellings.AddRange(GetMisspellingsInSpan(dirtySpan, textBox));
+                int removed = currentMisspellings.RemoveAll(tag => tag.ToTagSpan(snapshot).Span.OverlapsWith(dirty));
+                newMisspellings.AddRange(GetMisspellingsInSpans(naturalText, textBox));
                
                 // Also remove empties
                 removed += currentMisspellings.RemoveAll(tag => tag.ToTagSpan(snapshot).Span.IsEmpty);
@@ -257,7 +261,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
                             var temp = TagsChanged;
                             if (temp != null)
-                                temp(this, new SnapshotSpanEventArgs(dirtySpan));
+                                temp(this, new SnapshotSpanEventArgs(dirty));
 
                         }));
                 }
@@ -270,77 +274,80 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             }
         }
         
-        IEnumerable<MisspellingTag> GetMisspellingsInSpan(SnapshotSpan span, TextBox textBox)
+        IEnumerable<MisspellingTag> GetMisspellingsInSpans(NormalizedSnapshotSpanCollection spans, TextBox textBox)
         {
-            string text = span.GetText();
-
-            // We need to break this up for WPF, because it is *incredibly* slow at checking the spelling
-            for (int i = 0; i < text.Length; i++)
+            foreach (var span in spans)
             {
-                if (text[i] == ' ' || text[i] == '\t' || text[i] == '\r' || text[i] == '\n')
-                    continue;
+                string text = span.GetText();
 
-                // We've found a word (or something), so search for the next piece of whitespace or punctuation to get the entire word span.
-                // However, we will ignore words that are CamelCased, since those are probably not "real" words to begin with.
-                int end = i;
-                bool foundLower = false;
-                bool ignoreWord = false;
-                for (; end < text.Length; end++)
+                // We need to break this up for WPF, because it is *incredibly* slow at checking the spelling
+                for (int i = 0; i < text.Length; i++)
                 {
-                    char c = text[end];
+                    if (text[i] == ' ' || text[i] == '\t' || text[i] == '\r' || text[i] == '\n')
+                        continue;
 
-                    if (c == ' ' || c == '\t' || c == '\r' || c == '\n')
-                        break;
-
-                    if (!ignoreWord)
+                    // We've found a word (or something), so search for the next piece of whitespace or punctuation to get the entire word span.
+                    // However, we will ignore words that are CamelCased, since those are probably not "real" words to begin with.
+                    int end = i;
+                    bool foundLower = false;
+                    bool ignoreWord = false;
+                    for (; end < text.Length; end++)
                     {
-                        bool isUppercase = char.IsUpper(c);
+                        char c = text[end];
 
-                        if (foundLower && isUppercase)
-                            ignoreWord = true;
+                        if (c == ' ' || c == '\t' || c == '\r' || c == '\n')
+                            break;
 
-                        foundLower = !isUppercase;
+                        if (!ignoreWord)
+                        {
+                            bool isUppercase = char.IsUpper(c);
+
+                            if (foundLower && isUppercase)
+                                ignoreWord = true;
+
+                            foundLower = !isUppercase;
+                        }
                     }
-                }
 
-                // Skip this word and move on to the next
-                if (ignoreWord)
-                {
+                    // Skip this word and move on to the next
+                    if (ignoreWord)
+                    {
+                        i = end - 1;
+                        continue;
+                    }
+
+                    string textToParse = text.Substring(i, end - i);
+
+                    // Now pass these off to WPF
+                    textBox.Text = textToParse;
+
+                    int nextSearchIndex = 0;
+                    int nextSpellingErrorIndex = -1;
+
+                    while (-1 != (nextSpellingErrorIndex = textBox.GetNextSpellingErrorCharacterIndex(nextSearchIndex, LogicalDirection.Forward)))
+                    {
+                        var spellingError = textBox.GetSpellingError(nextSpellingErrorIndex);
+                        int length = textBox.GetSpellingErrorLength(nextSpellingErrorIndex);
+
+                        SnapshotSpan errorSpan = new SnapshotSpan(span.Snapshot, span.Start + i + nextSpellingErrorIndex, length);
+
+                        if (_dictionary.IsWordInDictionary(errorSpan.GetText()))
+                        {
+                            spellingError.IgnoreAll();
+                        }
+                        else
+                        {
+                            yield return new MisspellingTag(errorSpan, spellingError.Suggestions.ToArray());
+                        }
+
+                        nextSearchIndex = nextSpellingErrorIndex + length;
+                        if (nextSearchIndex >= textToParse.Length)
+                            break;
+                    }
+
+                    // Move past this word
                     i = end - 1;
-                    continue;
                 }
-
-                string textToParse = text.Substring(i, end - i);
-
-                // Now pass these off to WPF
-                textBox.Text = textToParse;
-
-                int nextSearchIndex = 0;
-                int nextSpellingErrorIndex = -1;
-
-                while (-1 != (nextSpellingErrorIndex = textBox.GetNextSpellingErrorCharacterIndex(nextSearchIndex, LogicalDirection.Forward)))
-                {
-                    var spellingError = textBox.GetSpellingError(nextSpellingErrorIndex);
-                    int length = textBox.GetSpellingErrorLength(nextSpellingErrorIndex);
-
-                    SnapshotSpan errorSpan = new SnapshotSpan(span.Snapshot, span.Start + i + nextSpellingErrorIndex, length);
-
-                    if (_dictionary.IsWordInDictionary(errorSpan.GetText()))
-                    {
-                        spellingError.IgnoreAll();
-                    }
-                    else
-                    {
-                        yield return new MisspellingTag(errorSpan, spellingError.Suggestions.ToArray());
-                    }
-
-                    nextSearchIndex = nextSpellingErrorIndex + length;
-                    if (nextSearchIndex >= textToParse.Length)
-                        break;
-                }
-
-                // Move past this word
-                i = end - 1;
             }
         }
 
