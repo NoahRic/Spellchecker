@@ -241,7 +241,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 var naturalText = new NormalizedSnapshotSpanCollection(
                     dirtySpan.NaturalTextSpans.Select(span => span.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive)));
 
-                List<MisspellingTag> currentMisspellings = _misspellings;
+                List<MisspellingTag> currentMisspellings = new List<MisspellingTag>(_misspellings);
                 List<MisspellingTag> newMisspellings = new List<MisspellingTag>();
 
                 int removed = currentMisspellings.RemoveAll(tag => tag.ToTagSpan(snapshot).Span.OverlapsWith(dirty));
