@@ -42,11 +42,17 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         void AddWordToDictionary(string word);
 
         /// <summary>
+        /// Ignore the given word, but don't add it to the dictionary.
+        /// </summary>
+        /// <param name="word">The word to be ignored.</param>
+        void IgnoreWord(string word);
+
+        /// <summary>
         /// Check the ignore dictionary for the given word.
         /// </summary>
         /// <param name="word"></param>
         /// <returns></returns>
-        bool IsWordInDictionary(string word);
+        bool ShouldIgnoreWord(string word);
 
         /// <summary>
         /// Raised when a new word is added to the dictionary, with the word

@@ -153,6 +153,8 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
             ITrackingSpan trackingSpan = errorSpan.Snapshot.CreateTrackingSpan(errorSpan, SpanTrackingMode.EdgeExclusive);
 
+            string word = errorSpan.GetText();
+
             // Add spelling suggestions (if there are any)
             List<ISmartTagAction> actions = new List<ISmartTagAction>();
             
@@ -164,10 +166,11 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
             // Add Dictionary operations (ignore all)
             List<ISmartTagAction> dictionaryActions = new List<ISmartTagAction>();
-            dictionaryActions.Add(new SpellDictionarySmartTagAction(trackingSpan, _dictionary, "Ignore All"));
+            dictionaryActions.Add(new SpellDictionarySmartTagAction(word, _dictionary, "Ignore all", ignore: true));
+            dictionaryActions.Add(new SpellDictionarySmartTagAction(word, _dictionary, "Add to dictionary", ignore: false));
             smartTagSets.Add(new SmartTagActionSet(dictionaryActions.AsReadOnly()));
 
-            return smartTagSets.AsReadOnly(); ;
+            return smartTagSets.AsReadOnly();
         }
 
         #endregion

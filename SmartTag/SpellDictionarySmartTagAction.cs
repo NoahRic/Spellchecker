@@ -25,7 +25,8 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
     internal class SpellDictionarySmartTagAction : ISmartTagAction
     {
         #region Private data
-        private ITrackingSpan _span;
+        private bool _ignore;
+        private string _word;
         private ISpellingDictionaryService _dictionary;
         #endregion
 
@@ -33,12 +34,14 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// <summary>
         /// Constructor for SpellDictionarySmartTagAction.
         /// </summary>
-        /// <param name="span">Word to add to dictionary.</param>
+        /// <param name="word">The word to add or ignore.</param>
         /// <param name="dictionary">The dictionary (used to ignore the word).</param>
         /// <param name="displayText">Text to show in the context menu for this action.</param>
-        public SpellDictionarySmartTagAction(ITrackingSpan span, ISpellingDictionaryService dictionary, string displayText)
+        /// <param name="ignore">Whether this is to ignore the word or add it to the dictionary.</param>
+        public SpellDictionarySmartTagAction(string word, ISpellingDictionaryService dictionary, string displayText, bool ignore)
         {
-            _span = span;
+            _word = word;
+            _ignore = ignore;
             _dictionary = dictionary;
             DisplayText = displayText;
         }
@@ -67,7 +70,10 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// </summary>
         public void Invoke()
         {
-            _dictionary.AddWordToDictionary(_span.GetText(_span.TextBuffer.CurrentSnapshot));
+            if (_ignore)
+                _dictionary.IgnoreWord(_word);
+            else
+                _dictionary.AddWordToDictionary(_word);
         }
 
         /// <summary>

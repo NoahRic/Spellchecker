@@ -33,97 +33,6 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         private string _ignoreWordsFile;
         #endregion
 
-        #region Cached span
-        class CachedSpan
-        {
-            public CachedSpan(int start, int length, IEnumerable<string> suggestions)
-            {
-                Start = start;
-                Length = length;
-                Suggestions = suggestions;
-            }
-
-            public int Start { get; private set; }
-            public int Length { get; private set; }
-            public IEnumerable<string> Suggestions { get; private set; }
-        }
-
-        class CachedSpanList : List<CachedSpan>
-        {
-            public CachedSpanList()
-            {
-                HitCount = 0;
-            }
-            public uint HitCount { get; set; }
-        }
-
-        class SpanCache
-        {
-            ulong m_cleanupCount = 0;
-            Dictionary<string, CachedSpanList> m_spans = new Dictionary<string, CachedSpanList>();
-            public SpanCache()
-            {
-                MaxCacheCount = 10000;
-                CleanupRate = MaxCacheCount * 10;
-            }
-
-            public bool TryGetValue(string key, out CachedSpanList value)
-            {
-                bool result = m_spans.TryGetValue(key, out value);
-                if (result) value.HitCount++;
-                return result;
-            }
-
-
-            public CachedSpanList this[string key]
-            {
-                get
-                {
-                    CachedSpanList value = m_spans[key];
-                    value.HitCount++;
-                    return value;
-                }
-                set
-                {
-                    m_spans[key] = value;
-                    CleanupCache();
-                }
-            }
-
-            public void Clear()
-            {
-                m_spans.Clear();
-            }
-
-            public uint MaxCacheCount { get; set; }
-            public uint CleanupRate { get; set; }
-
-            private void CleanupCache()
-            {
-                if (++m_cleanupCount > CleanupRate)
-                {
-                    m_cleanupCount = 0;
-                    if (m_spans.Count > MaxCacheCount)
-                    {
-                        uint removedStep = ((uint)(m_spans.Count)) / (MaxCacheCount / 2);
-                        uint index = 0;
-                        foreach (var item in m_spans)
-                        {
-                            if (item.Value.HitCount < 2 || index % removedStep != 0)
-                            {
-                                m_spans.Remove(item.Key);
-                            }
-                            index++;
-                            removedStep = (removedStep + 1);
-                        }
-                    }
-
-                }
-            }
-        }
-
-        #endregion
-
         #region Constructor
         /// <summary>
         /// Constructor for SpellingDictionaryService
@@ -149,23 +58,31 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// <param name="word">The word to add to the dictionary.</param>
         public void AddWordToDictionary(string word)
         {
-            if (!string.IsNullOrEmpty(word) && !_ignoreWords.Contains(word))
+            if (!string.IsNullOrEmpty(word))
             {
-                lock (_ignoreWords)
-                    _ignoreWords.Add(word);
-
                 // Add this word to the dictionary file.
                 using (StreamWriter writer = new StreamWriter(_ignoreWordsFile, true))
                 {
                     writer.WriteLine(word);
                 }
 
+                IgnoreWord(word);
+            }
+        }
+
+        public void IgnoreWord(string word)
+        {
+            if (!string.IsNullOrEmpty(word) && !_ignoreWords.Contains(word))
+            {
+                lock (_ignoreWords)
+                    _ignoreWords.Add(word);
+
                 // Notify listeners.
                 RaiseSpellingChangedEvent(word);
             }
         }
 
-        public bool IsWordInDictionary(string word)
+        public bool ShouldIgnoreWord(string word)
         {
             lock (_ignoreWords)
                 return _ignoreWords.Contains(word);

@@ -331,7 +331,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
                         SnapshotSpan errorSpan = new SnapshotSpan(span.Snapshot, span.Start + i + nextSpellingErrorIndex, length);
 
-                        if (_dictionary.IsWordInDictionary(errorSpan.GetText()))
+                        if (_dictionary.ShouldIgnoreWord(errorSpan.GetText()))
                         {
                             spellingError.IgnoreAll();
                         }
