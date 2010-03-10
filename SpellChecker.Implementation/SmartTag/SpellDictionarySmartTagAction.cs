@@ -16,6 +16,8 @@
 using System.Collections.ObjectModel;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
+using SpellChecker.Definitions;
+using System.Diagnostics;
 
 namespace Microsoft.VisualStudio.Language.Spellchecker
 {
@@ -27,7 +29,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         #region Private data
         private bool _ignore;
         private string _word;
-        private ISpellingDictionaryService _dictionary;
+        private ISpellingDictionary _dictionary;
         #endregion
 
         #region Constructor
@@ -38,7 +40,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// <param name="dictionary">The dictionary (used to ignore the word).</param>
         /// <param name="displayText">Text to show in the context menu for this action.</param>
         /// <param name="ignore">Whether this is to ignore the word or add it to the dictionary.</param>
-        public SpellDictionarySmartTagAction(string word, ISpellingDictionaryService dictionary, string displayText, bool ignore)
+        public SpellDictionarySmartTagAction(string word, ISpellingDictionary dictionary, string displayText, bool ignore)
         {
             _word = word;
             _ignore = ignore;
@@ -70,10 +72,14 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// </summary>
         public void Invoke()
         {
+            bool succeeded = false;
+
             if (_ignore)
-                _dictionary.IgnoreWord(_word);
+                succeeded = _dictionary.IgnoreWord(_word);
             else
-                _dictionary.AddWordToDictionary(_word);
+                succeeded = _dictionary.AddWordToDictionary(_word);
+
+            Debug.Assert(succeeded, "Call to modify dictionary was unsuccessful");
         }
 
         /// <summary>

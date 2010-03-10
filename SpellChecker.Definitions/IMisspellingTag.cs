@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.Text.Tagging;
 
-namespace Microsoft.VisualStudio.Language.Spellchecker
+namespace SpellChecker.Definitions
 {
-    interface IMisspellingTag : ITag
+    public interface IMisspellingTag : ITag
     {
         IEnumerable<string> Suggestions { get; }
     }

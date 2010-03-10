@@ -76,13 +76,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="NaturalTextTaggers\CommentTextTagger.cs" />
-    <Compile Include="NaturalTextTaggers\NaturalTextTag.cs" />
     <Compile Include="NaturalTextTaggers\NaturalTextTagger.cs" />
     <Compile Include="SmartTag\SpellDictionarySmartTagAction.cs" />
     <Compile Include="SmartTag\SpellSmartTagger.cs" />
     <Compile Include="SmartTag\SpellSmartTagAction.cs" />
-    <Compile Include="Spelling\ISpellingDictionaryService.cs" />
-    <Compile Include="Spelling\IMisspellingTag.cs" />
     <Compile Include="Spelling\SpellingTagger.cs" />
     <Compile Include="Spelling\SpellingDictionaryService.cs" />
     <Compile Include="Squiggles\SquiggleTagger.cs" />
@@ -106,6 +103,12 @@
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SpellChecker.Definitions\SpellChecker.Definitions.csproj">
+      <Project>{87D22AC6-424B-48DD-A5E8-DCB7CB3DDD63}</Project>
+      <Name>SpellChecker.Definitions</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v10.0\VSSDK\Microsoft.VsSDK.targets" />

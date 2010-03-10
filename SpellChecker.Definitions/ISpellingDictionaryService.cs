@@ -1,23 +1,8 @@
-//***************************************************************************
-//
-//    Copyright (c) Microsoft Corporation. All rights reserved.
-//    This code is licensed under the Visual Studio SDK license terms.
-//    THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
-//    ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
-//    IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
-//    PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
-//
-//***************************************************************************
-
-﻿////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Microsoft Corporation.  All rights reserved.
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.Text;
 
-namespace Microsoft.VisualStudio.Language.Spellchecker
+namespace SpellChecker.Definitions
 {
     public class SpellingEventArgs : EventArgs
     {
@@ -32,20 +17,39 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         public string Word { get; private set; }
     }
 
+    /// <summary>
+    /// Used to retrieve the spelling dictionary service for a given buffer.  The spelling dictionary service
+    /// also aggregates <see cref="IBufferSpecificDictionary"/> objects.
+    /// </summary>
+    /// <remarks>
+    /// This is a MEF component, and should be imported with:
+    /// [Import] ISpellingDictionaryServiceFactory;
+    /// </remarks>
     public interface ISpellingDictionaryService
+    {
+        ISpellingDictionary GetDictionary(ITextBuffer buffer);
+    }
+
+    /// <summary>
+    /// Provides dictionary services for ignoring words, adding them to a dictionary, seeing if a word should be ignored,
+    /// and an event for when words are ignored or added to the dictionary.
+    /// </summary>
+    public interface ISpellingDictionary
     {
         /// <summary>
         /// Add the given word to the dictionary, so that it will no longer show up as an
         /// incorrect spelling.
         /// </summary>
         /// <param name="word">The word to add to the dictionary.</param>
-        void AddWordToDictionary(string word);
+        /// <returns><c>true</c> if the word was successfully added to the dictionary, even if it was already in the dictionary.</returns>
+        bool AddWordToDictionary(string word);
 
         /// <summary>
         /// Ignore the given word, but don't add it to the dictionary.
         /// </summary>
         /// <param name="word">The word to be ignored.</param>
-        void IgnoreWord(string word);
+        /// <returns><c>true</c> if the word was successfully marked as ignored.</returns>
+        bool IgnoreWord(string word);
 
         /// <summary>
         /// Check the ignore dictionary for the given word.

@@ -21,13 +21,14 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
+using SpellChecker.Definitions;
 
 namespace Microsoft.VisualStudio.Language.Spellchecker
 {
     /// <summary>
     /// Provides tags for text files.
     /// </summary>
-    internal class NaturalTextTagger : ITagger<NaturalTextTag>
+    internal class NaturalTextTagger : ITagger<INaturalTextTag>
     {
         #region Private Fields
         private ITextBuffer _buffer;
@@ -48,7 +49,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 {
                     throw new ArgumentNullException("buffer");
                 }
-                
+
                 return new NaturalTextTagger(buffer) as ITagger<T>;
             }
         }
@@ -65,18 +66,18 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         }
         #endregion
 
-        #region ITagger<NaturalTextTag> Members
+        #region ITagger<INaturalTextTag> Members
         /// <summary>
         /// Returns tags on demand.
         /// </summary>
         /// <param name="spans">Spans collection to get tags for.</param>
         /// <returns>Tags in provided spans.</returns>
-        public IEnumerable<ITagSpan<NaturalTextTag>> GetTags(NormalizedSnapshotSpanCollection spans)
+        public IEnumerable<ITagSpan<INaturalTextTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
             foreach (var snapshotSpan in spans)
             {
                 Debug.Assert(snapshotSpan.Snapshot.TextBuffer == _buffer);
-                yield return new TagSpan<NaturalTextTag>(
+                yield return new TagSpan<INaturalTextTag>(
                         snapshotSpan,
                         new NaturalTextTag()
                         );
@@ -88,6 +89,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         public event EventHandler<SnapshotSpanEventArgs> TagsChanged;
 #pragma warning restore 67
         #endregion
+    }
 
+    class NaturalTextTag : INaturalTextTag
+    {
     }
 }

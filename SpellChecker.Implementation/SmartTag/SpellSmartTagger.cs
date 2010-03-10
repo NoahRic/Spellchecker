@@ -23,6 +23,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
+using SpellChecker.Definitions;
 
 namespace Microsoft.VisualStudio.Language.Spellchecker
 {
@@ -40,7 +41,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         #region Private Fields
 
         private ITextBuffer _buffer;
-        private ISpellingDictionaryService _dictionary;
+        private ISpellingDictionary _dictionary;
         private ITagAggregator<IMisspellingTag> _misspellingAggregator;
         private bool disposed = false;
         internal const string SpellingErrorType = "Spelling Error Smart Tag";
@@ -55,7 +56,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         {
             #region MEF Imports
             [Import]
-            ISpellingDictionaryService Dictionary = null;
+            ISpellingDictionaryService DictionaryService = null;
 
             [Import]
             internal IBufferTagAggregatorFactoryService TagAggregatorFactory = null;
@@ -74,14 +75,14 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                     return null;
 
                 var misspellingAggregator = TagAggregatorFactory.CreateTagAggregator<IMisspellingTag>(buffer);
-                return new SpellSmartTagger(buffer, Dictionary, misspellingAggregator) as ITagger<T>;
+                return new SpellSmartTagger(buffer, DictionaryService.GetDictionary(buffer), misspellingAggregator) as ITagger<T>;
 
             }
             #endregion
         }
         #endregion
 
-        public SpellSmartTagger(ITextBuffer buffer, ISpellingDictionaryService dictionary, ITagAggregator<IMisspellingTag> misspellingAggregator)
+        public SpellSmartTagger(ITextBuffer buffer, ISpellingDictionary dictionary, ITagAggregator<IMisspellingTag> misspellingAggregator)
         {
             _buffer = buffer;
             _dictionary = dictionary;
