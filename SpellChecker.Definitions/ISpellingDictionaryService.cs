@@ -4,6 +4,9 @@ using Microsoft.VisualStudio.Text;
 
 namespace SpellChecker.Definitions
 {
+    /// <summary>
+    /// Arguments for when a spelling dictionary has changed.
+    /// </summary>
     public class SpellingEventArgs : EventArgs
     {
         public SpellingEventArgs(string word)
@@ -12,7 +15,9 @@ namespace SpellChecker.Definitions
         }
 
         /// <summary>
-        /// Word placed in the Dictionary.
+        /// Word placed in the dictionary.  If <c>null</c>, it means
+	/// the entire dictionary has changed, and words that may have
+	/// been ignored before may now no longer be in the dictionary.
         /// </summary>
         public string Word { get; private set; }
     }
@@ -59,8 +64,9 @@ namespace SpellChecker.Definitions
         bool ShouldIgnoreWord(string word);
 
         /// <summary>
-        /// Raised when a new word is added to the dictionary, with the word
-        /// that was added.
+        /// Raised when the dictionary has been changed.
+	/// When a new word is added to the dictionary, the event arguments
+	/// contains the word that was added.
         /// </summary>
         event EventHandler<SpellingEventArgs> DictionaryUpdated;
     }

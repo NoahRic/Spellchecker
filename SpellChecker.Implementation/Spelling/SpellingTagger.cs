@@ -113,8 +113,18 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         void DictionaryUpdated(object sender, SpellingEventArgs e)
         {
-            List<MisspellingTag> currentMisspellings = _misspellings;
             ITextSnapshot snapshot = _buffer.CurrentSnapshot;
+
+            // If the word is null, it means the entire dictionary was updated and we
+            // need to reparse the entire file.
+            if (e.Word == null)
+            {
+                foreach (var line in snapshot.Lines)
+                    AddDirtySpan(line.Extent);
+                return;
+            }
+
+            List<MisspellingTag> currentMisspellings = _misspellings;
 
             foreach (var misspelling in currentMisspellings)
             {
@@ -334,11 +344,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
                         SnapshotSpan errorSpan = new SnapshotSpan(span.Snapshot, span.Start + i + nextSpellingErrorIndex, length);
 
-                        if (_dictionary.ShouldIgnoreWord(errorSpan.GetText()))
-                        {
-                            spellingError.IgnoreAll();
-                        }
-                        else
+                        if (!_dictionary.ShouldIgnoreWord(errorSpan.GetText()))
                         {
                             yield return new MisspellingTag(errorSpan, spellingError.Suggestions.ToArray());
                         }
