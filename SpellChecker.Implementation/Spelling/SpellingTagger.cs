@@ -30,7 +30,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             var dictionary = SpellingDictionaryFactory.GetDictionary(buffer);
 
             return buffer.Properties.GetOrCreateSingletonProperty(
-                () => new SpellingTagger(buffer, AggregatorFactory.CreateTagAggregator<NaturalTextTag>(buffer), dictionary)) as ITagger<T>;
+                () => new SpellingTagger(buffer, AggregatorFactory.CreateTagAggregator<INaturalTextTag>(buffer), dictionary)) as ITagger<T>;
         }
     }
 
@@ -60,7 +60,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         }
 
         ITextBuffer _buffer;
-        ITagAggregator<NaturalTextTag> _naturalTextTagger;
+        ITagAggregator<INaturalTextTag> _naturalTextTagger;
         Dispatcher _dispatcher;
         ISpellingDictionary _dictionary;
 
@@ -73,7 +73,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         DispatcherTimer _timer;
 
-        public SpellingTagger(ITextBuffer buffer, ITagAggregator<NaturalTextTag> naturalTextTagger, ISpellingDictionary dictionary)
+        public SpellingTagger(ITextBuffer buffer, ITagAggregator<INaturalTextTag> naturalTextTagger, ISpellingDictionary dictionary)
         {
             _buffer = buffer;
             _naturalTextTagger = naturalTextTagger;
