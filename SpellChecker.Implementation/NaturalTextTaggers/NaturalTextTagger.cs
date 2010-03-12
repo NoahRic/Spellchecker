@@ -28,7 +28,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
     /// <summary>
     /// Provides tags for text files.
     /// </summary>
-    internal class NaturalTextTagger : ITagger<INaturalTextTag>
+    internal class NaturalTextTagger : ITagger<NaturalTextTag>
     {
         #region Private Fields
         private ITextBuffer _buffer;
@@ -72,12 +72,12 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// </summary>
         /// <param name="spans">Spans collection to get tags for.</param>
         /// <returns>Tags in provided spans.</returns>
-        public IEnumerable<ITagSpan<INaturalTextTag>> GetTags(NormalizedSnapshotSpanCollection spans)
+        public IEnumerable<ITagSpan<NaturalTextTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
             foreach (var snapshotSpan in spans)
             {
                 Debug.Assert(snapshotSpan.Snapshot.TextBuffer == _buffer);
-                yield return new TagSpan<INaturalTextTag>(
+                yield return new TagSpan<NaturalTextTag>(
                         snapshotSpan,
                         new NaturalTextTag()
                         );
