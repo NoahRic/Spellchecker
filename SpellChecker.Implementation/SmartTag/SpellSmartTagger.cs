@@ -50,7 +50,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         #region MEF Imports / Exports
 
         [Export(typeof(IViewTaggerProvider))]
-        [ContentType("text")]
+        [ContentType("any")]
         [TagType(typeof(Microsoft.VisualStudio.Language.Intellisense.SmartTag))]
         internal class SpellSmartTaggerProvider : IViewTaggerProvider
         {

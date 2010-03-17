@@ -69,7 +69,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// MEF connector for the Spell checker squiggles.
         /// </summary>
         [Export(typeof(IViewTaggerProvider))]
-        [ContentType("text")]
+        [ContentType("any")]
         [TagType(typeof(SpellSquiggleTag))]
         internal class SquiggleTaggerProvider : IViewTaggerProvider
         {

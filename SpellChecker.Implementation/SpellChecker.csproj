@@ -76,6 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="NaturalTextTaggers\CommentTextTagger.cs" />
+    <Compile Include="NaturalTextTaggers\HtmlTextTagger.cs" />
     <Compile Include="NaturalTextTaggers\NaturalTextTagger.cs" />
     <Compile Include="SmartTag\SpellDictionarySmartTagAction.cs" />
     <Compile Include="SmartTag\SpellSmartTagger.cs" />
