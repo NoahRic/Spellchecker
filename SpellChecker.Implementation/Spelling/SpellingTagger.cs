@@ -317,6 +317,8 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
                             if (foundLower && isUppercase)
                                 ignoreWord = true;
+                            else if (c == '_')
+                                ignoreWord = true;
 
                             foundLower = !isUppercase;
                         }
