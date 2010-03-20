@@ -109,6 +109,7 @@
     <ProjectReference Include="..\SpellChecker.Definitions\SpellChecker.Definitions.csproj">
       <Project>{87D22AC6-424B-48DD-A5E8-DCB7CB3DDD63}</Project>
       <Name>SpellChecker.Definitions</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup</IncludeOutputGroupsInVSIX>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
