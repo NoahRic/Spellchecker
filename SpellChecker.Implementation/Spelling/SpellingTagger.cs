@@ -16,7 +16,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 {
     [Export(typeof(ITaggerProvider))]
     [ContentType("text")]
-    [TagType(typeof(IMisspellingTag))]
+    [TagType(typeof(MisspellingTag))]
     sealed class SpellingTaggerProvider : ITaggerProvider
     {
         [Import]
@@ -45,13 +45,13 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         public ITrackingSpan Span { get; private set; }
         public IEnumerable<string> Suggestions { get; private set; }
 
-        public ITagSpan<IMisspellingTag> ToTagSpan(ITextSnapshot snapshot)
+        public ITagSpan<MisspellingTag> ToTagSpan(ITextSnapshot snapshot)
         {
-            return new TagSpan<IMisspellingTag>(Span.GetSpan(snapshot), this);
+            return new TagSpan<MisspellingTag>(Span.GetSpan(snapshot), this);
         }
     }
 
-    sealed class SpellingTagger : ITagger<IMisspellingTag>
+    sealed class SpellingTagger : ITagger<MisspellingTag>
     {
         struct DirtySpan
         {
@@ -366,7 +366,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         #region Tagging implementation
 
-        public IEnumerable<ITagSpan<IMisspellingTag>> GetTags(NormalizedSnapshotSpanCollection spans)
+        public IEnumerable<ITagSpan<MisspellingTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
             if (spans.Count == 0)
                 yield break;

@@ -94,6 +94,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="BindingPaths.pkgdef">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <Content Include="ms-pl.txt">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
