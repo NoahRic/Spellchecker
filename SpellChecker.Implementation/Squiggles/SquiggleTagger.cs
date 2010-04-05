@@ -73,22 +73,21 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         [TagType(typeof(SpellSquiggleTag))]
         internal class SquiggleTaggerProvider : IViewTaggerProvider
         {
-            [Import(typeof(IBufferTagAggregatorFactoryService))]
-            internal IBufferTagAggregatorFactoryService TagAggregatorFactory { get; set; }
+            [Import]
+            internal IViewTagAggregatorFactoryService TagAggregatorFactory { get; set; }
 
             #region ITaggerProvider
             public ITagger<T> CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag
             {
-                if (buffer == null)
-                    throw new ArgumentNullException("buffer");
-                if (textView == null)
-                    throw new ArgumentNullException("textView");
+                // If this view isn't editable, then there isn't a good reason to be showing these.
+                if (!textView.Roles.Contains(PredefinedTextViewRoles.Editable))
+                    return null;
 
                 // Make sure we only tagging top buffer
                 if (buffer != textView.TextBuffer)
                     return null;
 
-                return new SquiggleTagger(buffer, TagAggregatorFactory.CreateTagAggregator<IMisspellingTag>(buffer)) as ITagger<T>;
+                return new SquiggleTagger(buffer, TagAggregatorFactory.CreateTagAggregator<IMisspellingTag>(textView)) as ITagger<T>;
             }
             #endregion
         }

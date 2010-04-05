@@ -11,26 +11,36 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using SpellChecker.Definitions;
+using Microsoft.VisualStudio.Text.Editor;
 
 namespace Microsoft.VisualStudio.Language.Spellchecker
 {
-    [Export(typeof(ITaggerProvider))]
-    [ContentType("text")]
+    [Export(typeof(IViewTaggerProvider))]
+    [ContentType("any")]
     [TagType(typeof(MisspellingTag))]
-    sealed class SpellingTaggerProvider : ITaggerProvider
+    sealed class SpellingTaggerProvider : IViewTaggerProvider
     {
         [Import]
-        IBufferTagAggregatorFactoryService AggregatorFactory = null;
+        IViewTagAggregatorFactoryService AggregatorFactory = null;
 
         [Import]
         ISpellingDictionaryService SpellingDictionaryFactory = null;
 
-        public ITagger<T> CreateTagger<T>(ITextBuffer buffer) where T : ITag
+        public ITagger<T> CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag
         {
-            var dictionary = SpellingDictionaryFactory.GetDictionary(buffer);
+            if (textView.TextBuffer != buffer)
+                return null;
 
-            return buffer.Properties.GetOrCreateSingletonProperty(
-                () => new SpellingTagger(buffer, AggregatorFactory.CreateTagAggregator<INaturalTextTag>(buffer), dictionary)) as ITagger<T>;
+            SpellingTagger spellingTagger;
+            if (textView.Properties.TryGetProperty(typeof(SpellingTagger), out spellingTagger))
+                return spellingTagger as ITagger<T>;
+
+            var dictionary = SpellingDictionaryFactory.GetDictionary(buffer);
+            var aggregator = AggregatorFactory.CreateTagAggregator<INaturalTextTag>(textView, TagAggregatorOptions.MapByContentType);
+            spellingTagger = new SpellingTagger(buffer, aggregator, dictionary);
+            textView.Properties[typeof(SpellingTagger)] = spellingTagger;
+
+            return spellingTagger as ITagger<T>;
         }
     }
 
@@ -60,7 +70,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         }
 
         ITextBuffer _buffer;
-        ITagAggregator<INaturalTextTag> _naturalTextTagger;
+        ITagAggregator<INaturalTextTag> _naturalTextAggregator;
         Dispatcher _dispatcher;
         ISpellingDictionary _dictionary;
 
@@ -73,10 +83,10 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         DispatcherTimer _timer;
 
-        public SpellingTagger(ITextBuffer buffer, ITagAggregator<INaturalTextTag> naturalTextTagger, ISpellingDictionary dictionary)
+        public SpellingTagger(ITextBuffer buffer, ITagAggregator<INaturalTextTag> naturalTextAggregator, ISpellingDictionary dictionary)
         {
             _buffer = buffer;
-            _naturalTextTagger = naturalTextTagger;
+            _naturalTextAggregator = naturalTextAggregator;
             _dispatcher = Dispatcher.CurrentDispatcher;
             _dictionary = dictionary;
 
@@ -84,7 +94,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             _misspellings = new List<MisspellingTag>();
 
             _buffer.Changed += BufferChanged;
-            _naturalTextTagger.TagsChanged += NaturalTagsChanged;
+            _naturalTextAggregator.TagsChanged += NaturalTagsChanged;
             _dictionary.DictionaryUpdated += DictionaryUpdated;
 
             // To start with, the entire buffer is dirty
@@ -158,7 +168,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 return new NormalizedSnapshotSpanCollection();
 
             ITextSnapshot snapshot = dirtySpan.Snapshot;
-            return new NormalizedSnapshotSpanCollection(_naturalTextTagger.GetTags(dirtySpan)
+            return new NormalizedSnapshotSpanCollection(_naturalTextAggregator.GetTags(dirtySpan)
                                                                           .SelectMany(tag => tag.Span.GetSpans(snapshot))
                                                                           .Select(s => s.Intersection(dirtySpan))
                                                                           .Where(s => s.HasValue && !s.Value.IsEmpty)
