@@ -310,10 +310,17 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                         continue;
 
                     // We've found a word (or something), so search for the next piece of whitespace or punctuation to get the entire word span.
-                    // However, we will ignore words that are CamelCased, since those are probably not "real" words to begin with.
+                    // However, we will ignore words in a few cases:
+                    // 1) Words that are CamelCased, since those are probably not "real" words to begin with.
+                    // 2) Things that look like filenames (contain a "." followed by something other than a "."). We may miss a few "real" misspellings
+                    //    here due to a missed space after a period, but that's acceptable.
+                    // 3) Words that include digits
+                    // 4) Words that include underscores
                     int end = i;
                     bool foundLower = false;
                     bool ignoreWord = false;
+                    bool lastLetterWasADot = false;
+
                     for (; end < text.Length; end++)
                     {
                         char c = text[end];
@@ -329,8 +336,13 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                                 ignoreWord = true;
                             else if (c == '_')
                                 ignoreWord = true;
+                            else if (char.IsDigit(c))
+                                ignoreWord = true;
+                            else if (lastLetterWasADot && c != '.')
+                                ignoreWord = true;
 
                             foundLower = !isUppercase;
+                            lastLetterWasADot = (c == '.');
                         }
                     }
 
