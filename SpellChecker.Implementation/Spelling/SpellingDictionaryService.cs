@@ -32,11 +32,16 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         [ImportMany(typeof(IBufferSpecificDictionaryProvider))]
         IEnumerable<Lazy<IBufferSpecificDictionaryProvider>> BufferSpecificDictionaryProviders = null;
 
+        static GlobalDictionary GlobalDictionary = null;
+
         public ISpellingDictionary GetDictionary(ITextBuffer buffer)
         {
             ISpellingDictionary service;
             if (buffer.Properties.TryGetProperty(typeof(SpellingDictionaryService), out service))
                 return service;
+
+            if (GlobalDictionary == null)
+                GlobalDictionary = new GlobalDictionary();
 
             List<ISpellingDictionary> bufferSpecificDictionaries = new List<ISpellingDictionary>();
 
@@ -47,7 +52,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                     bufferSpecificDictionaries.Add(dictionary);
             }
 
-            service = new SpellingDictionaryService(bufferSpecificDictionaries);
+            service = new SpellingDictionaryService(bufferSpecificDictionaries, GlobalDictionary);
             buffer.Properties[typeof(SpellingDictionaryService)] = service;
 
             return service;
@@ -56,113 +61,68 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
     internal class SpellingDictionaryService : ISpellingDictionary
     {
-        #region Private data
-        private SortedSet<string> _ignoreWords = new SortedSet<string>();
         private IList<ISpellingDictionary> _bufferSpecificDictionaries;
-        private string _ignoreWordsFile;
-        private bool _gotBufferSpecificEvent;
-        #endregion
+        GlobalDictionary _globalDictionary;
 
-        #region Constructor
-        /// <summary>
-        /// Constructor for SpellingDictionaryService
-        /// </summary>
-        public SpellingDictionaryService(IList<ISpellingDictionary> bufferSpecificDictionaries)
+        public SpellingDictionaryService(IList<ISpellingDictionary> bufferSpecificDictionaries, GlobalDictionary globalDictionary)
         {
             _bufferSpecificDictionaries = bufferSpecificDictionaries;
+            _globalDictionary = globalDictionary;
 
             foreach (var dictionary in _bufferSpecificDictionaries)
             {
                 dictionary.DictionaryUpdated += BufferSpecificDictionaryUpdated;
             }
 
-            string localFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\VisualStudio\10.0\SpellChecker");
-            if (!Directory.Exists(localFolder))
-            {
-                Directory.CreateDirectory(localFolder);
-            }
-            _ignoreWordsFile = Path.Combine(localFolder, "Dictionary.txt");
-
-            LoadIgnoreDictionary();
+            // Register to receive events when the global dictionary is updated
+            _globalDictionary.RegisterSpellingDictionaryService(this);
         }
 
         void BufferSpecificDictionaryUpdated(object sender, SpellingEventArgs e)
         {
-            _gotBufferSpecificEvent = true;
             RaiseSpellingChangedEvent(e.Word);
         }
-        #endregion
 
-        #region ISpellingDictionaryService
+        void GlobalDictionaryUpdated(object sender, SpellingEventArgs e)
+        {
+            RaiseSpellingChangedEvent(e.Word);
+        }
 
-        /// <summary>
-        /// Adds given word to the dictionary.
-        /// </summary>
-        /// <param name="word">The word to add to the dictionary.</param>
+        void RaiseSpellingChangedEvent(string word)
+        {
+            var temp = DictionaryUpdated;
+            if (temp != null)
+                DictionaryUpdated(this, new SpellingEventArgs(word));
+        }
+
+        #region ISpellingDictionary
+
         public bool AddWordToDictionary(string word)
         {
-            if (!string.IsNullOrEmpty(word))
+            if (string.IsNullOrEmpty(word))
+                return false;
+
+            foreach (var dictionary in _bufferSpecificDictionaries)
             {
-                _gotBufferSpecificEvent = false;
-
-                foreach (var dictionary in _bufferSpecificDictionaries)
-                {
-                    if (dictionary.AddWordToDictionary(word))
-                    {
-                        if (!_gotBufferSpecificEvent)
-                            RaiseSpellingChangedEvent(word);
-                        return true;
-                    }
-                }
-
-                // Add this word to the dictionary file.
-                using (StreamWriter writer = new StreamWriter(_ignoreWordsFile, true))
-                {
-                    writer.WriteLine(word);
-                }
-
-                IgnoreWord(word, addedToDictionary: true);
-
-                return true;
+                if (dictionary.AddWordToDictionary(word))
+                    return true;
             }
 
-            return false;
+            return _globalDictionary.AddWordToDictionary(word);
         }
 
         public bool IgnoreWord(string word)
         {
-            return IgnoreWord(word, false);
-        }
+            if (string.IsNullOrEmpty(word) || ShouldIgnoreWord(word))
+                return false;
 
-        private bool IgnoreWord(string word, bool addedToDictionary)
-        {
-            if (!string.IsNullOrEmpty(word) && !_ignoreWords.Contains(word))
+            foreach (var dictionary in _bufferSpecificDictionaries)
             {
-                if (!addedToDictionary)
-                {
-                    _gotBufferSpecificEvent = false;
-
-                    foreach (var dictionary in _bufferSpecificDictionaries)
-                    {
-                        if (dictionary.IgnoreWord(word))
-                        {
-                            if (!_gotBufferSpecificEvent)
-                                RaiseSpellingChangedEvent(word);
-                            return true;
-                        }
-                    }
-                }
-
-                lock (_ignoreWords)
-                    _ignoreWords.Add(word);
-
-                // Notify listeners.
-                RaiseSpellingChangedEvent(word);
-
-                return true;
+                if (dictionary.IgnoreWord(word))
+                    return true;
             }
 
-            return false;
+            return _globalDictionary.IgnoreWord(word);
         }
 
         public bool ShouldIgnoreWord(string word)
@@ -173,21 +133,100 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                     return true;
             }
 
-            lock (_ignoreWords)
-                return _ignoreWords.Contains(word);
+            return _globalDictionary.ShouldIgnoreWord(word);
         }
 
         public event EventHandler<SpellingEventArgs> DictionaryUpdated;
 
         #endregion
 
+        internal void GlobalDictionaryUpdated(string word)
+        {
+            RaiseSpellingChangedEvent(word);
+        }
+    }
+
+    internal class GlobalDictionary
+    {
+        private SortedSet<string> _ignoreWords = new SortedSet<string>();
+        private string _ignoreWordsFile;
+
+        public GlobalDictionary()
+        {
+            string localFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\VisualStudio\10.0\SpellChecker");
+            if (!Directory.Exists(localFolder))
+            {
+                Directory.CreateDirectory(localFolder);
+            }
+            _ignoreWordsFile = Path.Combine(localFolder, "Dictionary.txt");
+
+            LoadIgnoreDictionary();
+        }
+
+        #region ISpellingDictionary
+
+        public bool AddWordToDictionary(string word)
+        {
+            if (string.IsNullOrEmpty(word))
+                return false;
+
+            // Add this word to the dictionary file.
+            using (StreamWriter writer = new StreamWriter(_ignoreWordsFile, true))
+            {
+                writer.WriteLine(word);
+            }
+
+            IgnoreWord(word);
+
+            return true;
+        }
+
+        public bool IgnoreWord(string word)
+        {
+            if (string.IsNullOrEmpty(word) || ShouldIgnoreWord(word))
+                return true;
+
+            lock (_ignoreWords)
+                _ignoreWords.Add(word);
+
+            RaiseSpellingChangedEvent(word);
+
+            return true;
+        }
+
+        public bool ShouldIgnoreWord(string word)
+        {
+            lock (_ignoreWords)
+                return _ignoreWords.Contains(word);
+        }
+
+        #endregion
+
         #region Helpers
+
+        List<WeakReference> _registeredDictionaries = new List<WeakReference>();
+
+        internal void RegisterSpellingDictionaryService(SpellingDictionaryService dictionary)
+        {
+            _registeredDictionaries.Add(new WeakReference(dictionary));
+        }
 
         void RaiseSpellingChangedEvent(string word)
         {
-            var temp = DictionaryUpdated;
-            if (temp != null)
-                DictionaryUpdated(this, new SpellingEventArgs(word));
+            List<WeakReference> referencesToRemove = new List<WeakReference>();
+            foreach (var dictionaryRef in _registeredDictionaries)
+            {
+                var target = dictionaryRef.Target as SpellingDictionaryService;
+                if (target != null)
+                    target.GlobalDictionaryUpdated(word);
+                else
+                    referencesToRemove.Add(dictionaryRef);
+            }
+
+            foreach (var reference in referencesToRemove)
+            {
+                _registeredDictionaries.Remove(reference);
+            }
         }
 
         private void LoadIgnoreDictionary()
