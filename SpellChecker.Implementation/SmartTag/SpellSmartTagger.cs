@@ -63,7 +63,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             public ITagger<T> CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag
             {
                 // If this view isn't editable, then there isn't a good reason to be showing these.
-                if (!textView.Roles.Contains(PredefinedTextViewRoles.Editable))
+                if (!textView.Roles.Contains(PredefinedTextViewRoles.Editable) || !textView.Roles.Contains(PredefinedTextViewRoles.PrimaryDocument))
                     return null;
 
                 // Make sure we only tagging top buffer
