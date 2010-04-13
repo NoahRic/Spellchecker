@@ -63,7 +63,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
     sealed class SpellingTagger : ITagger<MisspellingTag>
     {
-        struct DirtySpan
+        struct SpanToParse
         {
             public SnapshotSpan Span;
             public NormalizedSnapshotSpanCollection NaturalTextSpans;
@@ -74,7 +74,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         Dispatcher _dispatcher;
         ISpellingDictionary _dictionary;
 
-        List<DirtySpan> _dirtySpans;
+        List<SnapshotSpan> _dirtySpans;
 
         object _dirtySpanLock = new object();
         volatile List<MisspellingTag> _misspellings;
@@ -90,7 +90,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             _dispatcher = Dispatcher.CurrentDispatcher;
             _dictionary = dictionary;
 
-            _dirtySpans = new List<DirtySpan>();
+            _dirtySpans = new List<SnapshotSpan>();
             _misspellings = new List<MisspellingTag>();
 
             _buffer.Changed += BufferChanged;
@@ -112,13 +112,8 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             if (dirtySpans.Count == 0)
                 return;
 
-            SnapshotSpan dirtySpan = new SnapshotSpan(_buffer.CurrentSnapshot, dirtySpans[0].Start, dirtySpans[dirtySpans.Count - 1].End);
-
-            AddDirtySpan(dirtySpan);
-
-            var temp = TagsChanged;
-            if (temp != null)
-                temp(this, new SnapshotSpanEventArgs(dirtySpan));
+            foreach (var span in dirtySpans)
+                AddDirtySpan(span);
         }
 
         void DictionaryUpdated(object sender, SpellingEventArgs e)
@@ -169,10 +164,10 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
             ITextSnapshot snapshot = dirtySpan.Snapshot;
             return new NormalizedSnapshotSpanCollection(_naturalTextAggregator.GetTags(dirtySpan)
-                                                                          .SelectMany(tag => tag.Span.GetSpans(snapshot))
-                                                                          .Select(s => s.Intersection(dirtySpan))
-                                                                          .Where(s => s.HasValue && !s.Value.IsEmpty)
-                                                                          .Select(s => s.Value));                    
+                                                                              .SelectMany(tag => tag.Span.GetSpans(snapshot))
+                                                                              .Select(s => s.Intersection(dirtySpan))
+                                                                              .Where(s => s.HasValue && !s.Value.IsEmpty)
+                                                                              .Select(s => s.Value));                    
         }
 
         void AddDirtySpan(SnapshotSpan span)
@@ -180,13 +175,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             if (span.IsEmpty)
                 return;
 
-            var naturalLanguageSpans = GetNaturalLanguageSpansForDirtySpan(span);
-
-            DirtySpan dirty = new DirtySpan() { NaturalTextSpans = naturalLanguageSpans, Span = span };
-
             lock (_dirtySpanLock)
             {
-                _dirtySpans.Add(dirty);
+                _dirtySpans.Add(span);
                 ScheduleUpdate();
             }
         }
@@ -200,69 +191,83 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                     Interval = TimeSpan.FromMilliseconds(500)
                 };
 
-                _timer.Tick += (sender, args) =>
-                {
-                    // If an update is currently running, wait until the next timer tick
-                    if (_updateThread != null && _updateThread.IsAlive)
-                        return;
-
-                    _timer.Stop();
-
-                    _updateThread = new Thread(GuardedCheckSpellings)
-                    {
-                        Name = "Spell Check",
-                        Priority = ThreadPriority.BelowNormal
-                    };
-
-                    if (!_updateThread.TrySetApartmentState(ApartmentState.STA))
-                        Debug.Fail("Unable to set thread apartment state to STA, things *will* break.");
-
-                    _updateThread.Start();
-                };
+                _timer.Tick += StartUpdateThread;
             }
 
             _timer.Stop();
             _timer.Start();
         }
 
-        void GuardedCheckSpellings(object obj)
+        void StartUpdateThread(object sender, EventArgs e)
+        {
+            // If an update is currently running, wait until the next timer tick
+            if (_updateThread != null && _updateThread.IsAlive)
+                return;
+
+            _timer.Stop();
+
+            List<SnapshotSpan> dirtySpans;
+            lock (_dirtySpanLock)
+            {
+                dirtySpans = new List<SnapshotSpan>(_dirtySpans);
+                _dirtySpans = new List<SnapshotSpan>();
+
+                if (dirtySpans.Count == 0)
+                    return;
+            }
+
+            // Normalize the dirty spans
+            ITextSnapshot snapshot = _buffer.CurrentSnapshot;
+            var normalizedSpans = new NormalizedSnapshotSpanCollection(dirtySpans.Select(s => s.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive)));
+            var spansToParse = normalizedSpans.Select(s => new SpanToParse() { Span = s, NaturalTextSpans = GetNaturalLanguageSpansForDirtySpan(s) })
+                                              .ToList();
+
+            _updateThread = new Thread(GuardedCheckSpellings)
+            {
+                Name = "Spell Check",
+                Priority = ThreadPriority.BelowNormal
+            };
+
+            if (!_updateThread.TrySetApartmentState(ApartmentState.STA))
+                Debug.Fail("Unable to set thread apartment state to STA, things *will* break.");
+
+            _updateThread.Start(spansToParse);
+        }
+
+        void GuardedCheckSpellings(object spansToParseObject)
         {
             try
             {
-                CheckSpellings();
+                IEnumerable<SpanToParse> spansToParse = spansToParseObject as IEnumerable<SpanToParse>;
+                if (spansToParse == null)
+                {
+                    Debug.Fail("Being asked to check a null list of dirty spans.  What gives?");
+                    return;
+                }
+
+                CheckSpellings(spansToParse);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.Fail("Exception!" + ex.Message);
                 // If anything fails in the background thread, just ignore it.  It's possible that the background thread will run
                 // on VS shutdown, at which point calls into WPF throw exceptions.  If we don't guard against those exceptions, the
                 // user will see a crash on exit.
             }
         }
 
-        void CheckSpellings()
+        void CheckSpellings(IEnumerable<SpanToParse> spansToParse)
         {
             TextBox textBox = new TextBox();
             textBox.SpellCheck.IsEnabled = true;
 
-            IList<DirtySpan> dirtySpans;
-
-            lock (_dirtySpanLock)
-            {
-                dirtySpans = _dirtySpans;
-                if (dirtySpans.Count == 0)
-                    return;
-
-                _dirtySpans = new List<DirtySpan>();
-            }
-
             ITextSnapshot snapshot = _buffer.CurrentSnapshot;
 
-            // Break up dirty into component pieces, so we produce incremental updates
-            foreach (var dirtySpan in dirtySpans)
+            foreach (var spanToParse in spansToParse)
             {
-                var dirty = dirtySpan.Span.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive);
+                var dirty = spanToParse.Span.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive);
                 var naturalText = new NormalizedSnapshotSpanCollection(
-                    dirtySpan.NaturalTextSpans.Select(span => span.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive)));
+                    spanToParse.NaturalTextSpans.Select(span => span.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive)));
 
                 List<MisspellingTag> currentMisspellings = new List<MisspellingTag>(_misspellings);
                 List<MisspellingTag> newMisspellings = new List<MisspellingTag>();
