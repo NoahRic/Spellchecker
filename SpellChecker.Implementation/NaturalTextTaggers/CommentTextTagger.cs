@@ -64,7 +64,6 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         }
         #endregion
 
-        #region Constructor
         /// <summary>
         /// Constructor for Natural Text Tagger.
         /// </summary>
@@ -74,10 +73,10 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         {
             _buffer = buffer;
             _classifier = classifier;
-        }
-        #endregion
 
-        #region ITagger<NaturalTextTag> Members
+            classifier.ClassificationChanged += ClassificationChanged;
+        }
+
         /// <summary>
         /// Returns tags on demand.
         /// </summary>
@@ -105,10 +104,13 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             }
         }
 
-#pragma warning disable 67
-        public event EventHandler<SnapshotSpanEventArgs> TagsChanged;
-#pragma warning restore 67
-        #endregion
+        void ClassificationChanged(object sender, ClassificationChangedEventArgs e)
+        {
+            var temp = TagsChanged;
+            if (temp != null)
+                temp(this, new SnapshotSpanEventArgs(e.ChangeSpan));
+        }
 
+        public event EventHandler<SnapshotSpanEventArgs> TagsChanged;
     }
 }
