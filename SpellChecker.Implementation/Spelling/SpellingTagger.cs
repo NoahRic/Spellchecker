@@ -351,6 +351,10 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                             break;
                     }
 
+                    // If this word is in ALL CAPS, ignore it
+                    if (!foundLower)
+                        ignoreWord = true;
+
                     // Skip this word and move on to the next
                     if (ignoreWord)
                     {
