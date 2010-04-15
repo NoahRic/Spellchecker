@@ -311,7 +311,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 // We need to break this up for WPF, because it is *incredibly* slow at checking the spelling
                 for (int i = 0; i < text.Length; i++)
                 {
-                    if (text[i] == ' ' || text[i] == '\t' || text[i] == '\r' || text[i] == '\n')
+                    if (!IsSpellingWordChar(text[i]))
                         continue;
 
                     // We've found a word (or something), so search for the next piece of whitespace or punctuation to get the entire word span.
@@ -330,9 +330,6 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                     {
                         char c = text[end];
 
-                        if (c == ' ' || c == '\t' || c == '\r' || c == '\n')
-                            break;
-
                         if (!ignoreWord)
                         {
                             bool isUppercase = char.IsUpper(c);
@@ -349,6 +346,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                             foundLower = !isUppercase;
                             lastLetterWasADot = (c == '.');
                         }
+
+                        if (!IsSpellingWordChar(c))
+                            break;
                     }
 
                     // Skip this word and move on to the next
@@ -387,6 +387,14 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                     i = end - 1;
                 }
             }
+        }
+
+        /// <summary>
+        /// Determine if the given character is a "spelling" word char, which includes a few more things than just characters
+        /// </summary>
+        bool IsSpellingWordChar(char c)
+        {
+            return c == '\'' || c == '`' || c == '-' || c == '.' || char.IsLetter(c);
         }
 
         #endregion
