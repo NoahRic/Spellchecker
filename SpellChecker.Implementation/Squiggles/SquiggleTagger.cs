@@ -23,6 +23,7 @@ using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using SpellChecker.Definitions;
+using Microsoft.VisualStudio.Text.Adornments;
 
 namespace Microsoft.VisualStudio.Language.Spellchecker
 {
@@ -31,7 +32,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
     /// </summary>
     internal class SpellSquiggleTag : ErrorTag
     {
-        public SpellSquiggleTag(string squiggleType, object toolTipContent) : base(squiggleType, toolTipContent) { }
+        public SpellSquiggleTag(string squiggleType) : base(squiggleType) { }
     }
 
     /// <summary>
@@ -59,11 +60,18 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         {
             public SpellingErrorClassificationFormatDefinition()
             {
-                this.ForegroundBrush = new SolidColorBrush(Color.FromRgb(149, 23, 149));
+                this.ForegroundColor = Colors.Red;
                 this.BackgroundCustomizable = false;
                 this.DisplayName = "Spelling Error";
             }
         }
+
+#pragma warning disable 414
+        [Export(typeof(ErrorTypeDefinition))]
+        [Name(SquiggleTagger.SpellingErrorType)]
+        [DisplayName(SquiggleTagger.SpellingErrorType)]
+        ErrorTypeDefinition SpellingErrorTypeDefinition = null;
+#pragma warning restore 414
 
         /// <summary>
         /// MEF connector for the Spell checker squiggles.
@@ -130,7 +138,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
                 yield return new TagSpan<IErrorTag>(
                                 errorSpan,
-                                new SpellSquiggleTag(SquiggleTagger.SpellingErrorType, errorSpan.GetText()));
+                                new SpellSquiggleTag(SquiggleTagger.SpellingErrorType));
             }
         }
 
