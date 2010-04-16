@@ -37,7 +37,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
             var dictionary = SpellingDictionaryFactory.GetDictionary(buffer);
             var aggregator = AggregatorFactory.CreateTagAggregator<INaturalTextTag>(textView, TagAggregatorOptions.MapByContentType);
-            spellingTagger = new SpellingTagger(buffer, aggregator, dictionary);
+            spellingTagger = new SpellingTagger(buffer, textView, aggregator, dictionary);
             textView.Properties[typeof(SpellingTagger)] = spellingTagger;
 
             return spellingTagger as ITagger<T>;
@@ -80,11 +80,13 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         volatile List<MisspellingTag> _misspellings;
 
         Thread _updateThread;
-
         DispatcherTimer _timer;
 
-        public SpellingTagger(ITextBuffer buffer, ITagAggregator<INaturalTextTag> naturalTextAggregator, ISpellingDictionary dictionary)
+        bool _isClosed;
+
+        public SpellingTagger(ITextBuffer buffer, ITextView view, ITagAggregator<INaturalTextTag> naturalTextAggregator, ISpellingDictionary dictionary)
         {
+            _isClosed = false;
             _buffer = buffer;
             _naturalTextAggregator = naturalTextAggregator;
             _dispatcher = Dispatcher.CurrentDispatcher;
@@ -97,6 +99,8 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             _naturalTextAggregator.TagsChanged += NaturalTagsChanged;
             _dictionary.DictionaryUpdated += DictionaryUpdated;
 
+            view.Closed += ViewClosed;
+
             // To start with, the entire buffer is dirty
             // Split this into chunks, so we update pieces at a time
             ITextSnapshot snapshot = _buffer.CurrentSnapshot;
@@ -105,8 +109,25 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 AddDirtySpan(line.Extent);
         }
 
+        void ViewClosed(object sender, EventArgs e)
+        {
+            _isClosed = true;
+
+            if (_timer != null)
+                _timer.Stop();
+            if (_buffer != null)
+                _buffer.Changed -= BufferChanged;
+            if (_naturalTextAggregator != null)
+                _naturalTextAggregator.Dispose();
+            if (_dictionary != null)
+                _dictionary.DictionaryUpdated -= DictionaryUpdated;
+        }
+
         void NaturalTagsChanged(object sender, TagsChangedEventArgs e)
         {
+            if (_isClosed)
+                return;
+
             NormalizedSnapshotSpanCollection dirtySpans = e.Span.GetSpans(_buffer.CurrentSnapshot);
 
             if (dirtySpans.Count == 0)
@@ -118,6 +139,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         void DictionaryUpdated(object sender, SpellingEventArgs e)
         {
+            if (_isClosed)
+                return;
+
             ITextSnapshot snapshot = _buffer.CurrentSnapshot;
 
             // If the word is null, it means the entire dictionary was updated and we
@@ -142,6 +166,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         void BufferChanged(object sender, TextContentChangedEventArgs e)
         {
+            if (_isClosed)
+                return;
+
             ITextSnapshot snapshot = e.After;
 
             foreach (var change in e.Changes)
@@ -159,7 +186,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         NormalizedSnapshotSpanCollection GetNaturalLanguageSpansForDirtySpan(SnapshotSpan dirtySpan)
         {
-            if (dirtySpan.IsEmpty)
+            if (_isClosed || dirtySpan.IsEmpty)
                 return new NormalizedSnapshotSpanCollection();
 
             ITextSnapshot snapshot = dirtySpan.Snapshot;
@@ -184,6 +211,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         void ScheduleUpdate()
         {
+            if (_isClosed)
+                return;
+
             if (_timer == null)
             {
                 _timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle, _dispatcher)
@@ -201,7 +231,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         void StartUpdateThread(object sender, EventArgs e)
         {
             // If an update is currently running, wait until the next timer tick
-            if (_updateThread != null && _updateThread.IsAlive)
+            if (_isClosed || _updateThread != null && _updateThread.IsAlive)
                 return;
 
             _timer.Stop();
@@ -236,6 +266,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         void GuardedCheckSpellings(object spansToParseObject)
         {
+            if (_isClosed)
+                return;
+
             try
             {
                 IEnumerable<SpanToParse> spansToParse = spansToParseObject as IEnumerable<SpanToParse>;
@@ -285,6 +318,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
                     _dispatcher.Invoke(new Action(() =>
                         {
+                            if (_isClosed)
+                                return;
+
                             _misspellings = currentMisspellings;
 
                             var temp = TagsChanged;
@@ -297,6 +333,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             
             lock (_dirtySpanLock)
             {
+                if (_isClosed)
+                    return;
+
                 if (_dirtySpans.Count != 0)
                     _dispatcher.BeginInvoke(new Action(() => ScheduleUpdate()));
             }
@@ -407,7 +446,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         public IEnumerable<ITagSpan<MisspellingTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
-            if (spans.Count == 0)
+            if (_isClosed || spans.Count == 0)
                 yield break;
 
             List<MisspellingTag> currentMisspellings = _misspellings;
