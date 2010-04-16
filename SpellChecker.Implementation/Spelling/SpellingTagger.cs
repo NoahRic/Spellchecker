@@ -221,11 +221,25 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                     Interval = TimeSpan.FromMilliseconds(500)
                 };
 
-                _timer.Tick += StartUpdateThread;
+                _timer.Tick += GuardedStartUpdateThread;
             }
 
             _timer.Stop();
             _timer.Start();
+        }
+
+        void GuardedStartUpdateThread(object sender, EventArgs e)
+        {
+            try
+            {
+                StartUpdateThread(sender, e);
+            }
+            catch (Exception ex)
+            {
+                Debug.Fail("Exception!" + ex.Message);
+                // If anything fails during the handling of a dispatcher tick, just ignore it.  If we don't guard against those exceptions, the
+                // user will see a crash.
+            }
         }
 
         void StartUpdateThread(object sender, EventArgs e)
