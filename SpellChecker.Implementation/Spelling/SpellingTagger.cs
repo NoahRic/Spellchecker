@@ -343,7 +343,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                             else if (lastLetterWasADot && c != '.')
                                 ignoreWord = true;
 
-                            foundLower = !isUppercase;
+                            foundLower = char.IsLower(c);
                             lastLetterWasADot = (c == '.');
                         }
 
