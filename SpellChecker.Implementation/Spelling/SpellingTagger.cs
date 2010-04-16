@@ -382,7 +382,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                             else if (lastLetterWasADot && c != '.')
                                 ignoreWord = true;
 
-                            foundLower = char.IsLower(c);
+                            foundLower = foundLower || char.IsLower(c);
                             lastLetterWasADot = (c == '.');
                         }
 
