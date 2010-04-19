@@ -22,83 +22,78 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
+using System.Linq;
 
 namespace Microsoft.VisualStudio.Language.Spellchecker
 {
-    /// <summary>
-    /// Provides tags for Doc Comment regions
-    /// </summary>
-    internal class CommentTextTagger : ITagger<NaturalTextTag>
+    [Export(typeof(ITaggerProvider))]
+    [ContentType("code")]
+    [TagType(typeof(NaturalTextTag))]
+    internal class CommentTextTaggerProvider : ITaggerProvider
     {
-        #region Private Fields
-        private ITextBuffer _buffer;
-        private IClassifier _classifier;
-        #endregion
+        [Import]
+        internal IClassifierAggregatorService ClassifierAggregatorService { get; set; }
 
-        #region MEF Imports / Exports
-        /// <summary>
-        /// MEF connector for the Natural Text Tagger.
-        /// </summary>
-        [Export(typeof(ITaggerProvider))]
-        [ContentType("code")]
-        [TagType(typeof(NaturalTextTag))]
-        internal class CommentTextTaggerProvider : ITaggerProvider
+        [Import]
+        internal IBufferTagAggregatorFactoryService TagAggregatorFactory { get; set; }
+
+        public ITagger<T> CreateTagger<T>(ITextBuffer buffer) where T : ITag
         {
-            #region MEF Imports
-            [Import]
-            internal IClassifierAggregatorService ClassifierAggregatorService { get; set; }
-            #endregion
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
 
-            #region ITaggerProvider
-            public ITagger<T> CreateTagger<T>(ITextBuffer buffer) where T : ITag
-            {
-                if (buffer == null)
-                {
-                    throw new ArgumentNullException("buffer");
-                }
+            var urlAggregator = TagAggregatorFactory.CreateTagAggregator<IUrlTag>(buffer);
+            var classifierAggregator = ClassifierAggregatorService.GetClassifier(buffer);
 
-                return new CommentTextTagger(buffer, ClassifierAggregatorService.GetClassifier(buffer)) as ITagger<T>;
-            }
-
-            #endregion
+            return new CommentTextTagger(buffer, classifierAggregator, urlAggregator) as ITagger<T>;
         }
-        #endregion
+    }
 
-        /// <summary>
-        /// Constructor for Natural Text Tagger.
-        /// </summary>
-        /// <param name="buffer">Relevant buffer.</param>
-        /// <param name="classifiers">List of all available classifiers.</param>
-        public CommentTextTagger(ITextBuffer buffer, IClassifier classifier)
+    internal class CommentTextTagger : ITagger<NaturalTextTag>, IDisposable
+    {
+        ITextBuffer _buffer;
+        IClassifier _classifier;
+        ITagAggregator<IUrlTag> _urlAggregator;
+
+        public CommentTextTagger(ITextBuffer buffer, IClassifier classifier, ITagAggregator<IUrlTag> urlAggregator)
         {
             _buffer = buffer;
             _classifier = classifier;
+            _urlAggregator = urlAggregator;
 
             classifier.ClassificationChanged += ClassificationChanged;
+            urlAggregator.TagsChanged += UrlTagsChanged;
         }
 
-        /// <summary>
-        /// Returns tags on demand.
-        /// </summary>
-        /// <param name="spans">Spans collection to get tags for.</param>
-        /// <returns>Tags in provided spans.</returns>
         public IEnumerable<ITagSpan<NaturalTextTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
-            if (_classifier != null)
+            if (_classifier == null || spans == null || spans.Count == 0)
+                yield break;
+
+            ITextSnapshot snapshot = spans[0].Snapshot;
+
+            // First, subtract out any URLs
+            var urlSpans = new NormalizedSnapshotSpanCollection(
+                _urlAggregator.GetTags(spans)
+                              .SelectMany(tagSpan => tagSpan.Span.GetSpans(snapshot)));
+
+            spans = NormalizedSnapshotSpanCollection.Difference(spans, urlSpans);
+
+            // Now, search the URLs for human-readable text
+            foreach (var snapshotSpan in spans)
             {
-                foreach (var snapshotSpan in spans)
+                Debug.Assert(snapshotSpan.Snapshot.TextBuffer == _buffer);
+                foreach (ClassificationSpan classificationSpan in _classifier.GetClassificationSpans(snapshotSpan))
                 {
-                    Debug.Assert(snapshotSpan.Snapshot.TextBuffer == _buffer);
-                    foreach (ClassificationSpan classificationSpan in _classifier.GetClassificationSpans(snapshotSpan))
+                    string name = classificationSpan.ClassificationType.Classification.ToLowerInvariant();
+
+                    if ((name.Contains("comment") || name.Contains("string")) &&
+                       !(name.Contains("xml doc tag")))
                     {
-                        if (classificationSpan.ClassificationType.ToString().ToLower(CultureInfo.InvariantCulture).Contains("comment") ||
-                            classificationSpan.ClassificationType.ToString().ToLower(CultureInfo.InvariantCulture).Contains("string"))
-                        {
-                            yield return new TagSpan<NaturalTextTag>(
-                                    classificationSpan.Span,
-                                    new NaturalTextTag()
-                                    );
-                        }
+                        yield return new TagSpan<NaturalTextTag>(
+                                classificationSpan.Span,
+                                new NaturalTextTag()
+                                );
                     }
                 }
             }
@@ -111,6 +106,27 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 temp(this, new SnapshotSpanEventArgs(e.ChangeSpan));
         }
 
+        void UrlTagsChanged(object sender, TagsChangedEventArgs e)
+        {
+            var temp = TagsChanged;
+            if (temp != null)
+            {
+                var spans = e.Span.GetSpans(_buffer.CurrentSnapshot);
+                if (spans.Count == 0)
+                    return;
+
+                temp(this, new SnapshotSpanEventArgs(new SnapshotSpan(spans[0].Start, spans[spans.Count - 1].End)));
+            }
+        }
+
         public event EventHandler<SnapshotSpanEventArgs> TagsChanged;
+
+        public void Dispose()
+        {
+            if (_urlAggregator != null)
+                _urlAggregator.TagsChanged -= UrlTagsChanged;
+            if (_classifier != null)
+                _classifier.ClassificationChanged -= ClassificationChanged;
+        }
     }
 }
