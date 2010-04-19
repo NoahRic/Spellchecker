@@ -374,6 +374,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                     //    here due to a missed space after a period, but that's acceptable.
                     // 3) Words that include digits
                     // 4) Words that include underscores
+                    // 5) Words in ALL CAPS
                     int end = i;
                     bool foundLower = false;
                     bool ignoreWord = false;
@@ -417,7 +418,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
                     string textToParse = text.Substring(i, end - i);
 
-                    // Now pass these off to WPF
+                    // Now pass these off to WPF.
                     textBox.Text = textToParse;
 
                     int nextSearchIndex = 0;
@@ -427,6 +428,11 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                     {
                         var spellingError = textBox.GetSpellingError(nextSpellingErrorIndex);
                         int length = textBox.GetSpellingErrorLength(nextSpellingErrorIndex);
+
+                        // Work around what looks to be a WPF bug; if the spelling error is followed by a 's, then include that in the error span.
+                        string nextChars = textToParse.Substring(nextSpellingErrorIndex + length).ToLowerInvariant();
+                        if (nextChars.StartsWith("'s"))
+                            length += 2;
 
                         SnapshotSpan errorSpan = new SnapshotSpan(span.Snapshot, span.Start + i + nextSpellingErrorIndex, length);
 
