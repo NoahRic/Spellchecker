@@ -12,7 +12,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
     [Export(typeof(ITaggerProvider))]
     [ContentType("html")]
     [TagType(typeof(NaturalTextTag))]
-    internal class CommentTextTaggerProvider : ITaggerProvider
+    internal class HtmlTextTaggerProvider : ITaggerProvider
     {
         [Import]
         IClassifierAggregatorService ClassifierAggregatorService { get; set; }

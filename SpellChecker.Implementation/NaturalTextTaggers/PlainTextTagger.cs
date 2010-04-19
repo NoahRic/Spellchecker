@@ -28,20 +28,17 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
     /// <summary>
     /// Provides tags for text files.
     /// </summary>
-    internal class NaturalTextTagger : ITagger<NaturalTextTag>
+    internal class PlainTextTagger : ITagger<NaturalTextTag>
     {
         #region Private Fields
         private ITextBuffer _buffer;
         #endregion
 
         #region MEF Imports / Exports
-        /// <summary>
-        /// MEF connector for the Natural Text Tagger.
-        /// </summary>
         [Export(typeof(ITaggerProvider))]
         [ContentType("plaintext")]
         [TagType(typeof(NaturalTextTag))]
-        internal class NaturalTextTaggerProvider : ITaggerProvider
+        internal class PlainTextTaggerProvider : ITaggerProvider
         {
             public ITagger<T> CreateTagger<T>(ITextBuffer buffer) where T : ITag
             {
@@ -50,7 +47,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                     throw new ArgumentNullException("buffer");
                 }
 
-                return new NaturalTextTagger(buffer) as ITagger<T>;
+                return new PlainTextTagger(buffer) as ITagger<T>;
             }
         }
         #endregion
@@ -60,23 +57,17 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// Constructor for Natural Text Tagger.
         /// </summary>
         /// <param name="buffer">Relevant buffer.</param>
-        public NaturalTextTagger(ITextBuffer buffer)
+        public PlainTextTagger(ITextBuffer buffer)
         {
             _buffer = buffer;
         }
         #endregion
 
         #region ITagger<INaturalTextTag> Members
-        /// <summary>
-        /// Returns tags on demand.
-        /// </summary>
-        /// <param name="spans">Spans collection to get tags for.</param>
-        /// <returns>Tags in provided spans.</returns>
         public IEnumerable<ITagSpan<NaturalTextTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
             foreach (var snapshotSpan in spans)
             {
-                Debug.Assert(snapshotSpan.Snapshot.TextBuffer == _buffer);
                 yield return new TagSpan<NaturalTextTag>(
                         snapshotSpan,
                         new NaturalTextTag()
