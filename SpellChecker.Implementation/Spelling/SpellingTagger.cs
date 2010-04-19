@@ -36,8 +36,10 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 return spellingTagger as ITagger<T>;
 
             var dictionary = SpellingDictionaryFactory.GetDictionary(buffer);
-            var aggregator = AggregatorFactory.CreateTagAggregator<INaturalTextTag>(textView, TagAggregatorOptions.MapByContentType);
-            spellingTagger = new SpellingTagger(buffer, textView, aggregator, dictionary);
+            var naturalTextAggregator = AggregatorFactory.CreateTagAggregator<INaturalTextTag>(textView, 
+                                                                                               TagAggregatorOptions.MapByContentType);
+            var urlAggregator = AggregatorFactory.CreateTagAggregator<IUrlTag>(textView);
+            spellingTagger = new SpellingTagger(buffer, textView, naturalTextAggregator, urlAggregator, dictionary);
             textView.Properties[typeof(SpellingTagger)] = spellingTagger;
 
             return spellingTagger as ITagger<T>;
@@ -71,6 +73,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         ITextBuffer _buffer;
         ITagAggregator<INaturalTextTag> _naturalTextAggregator;
+        ITagAggregator<IUrlTag> _urlAggregator;
         Dispatcher _dispatcher;
         ISpellingDictionary _dictionary;
 
@@ -84,11 +87,16 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         bool _isClosed;
 
-        public SpellingTagger(ITextBuffer buffer, ITextView view, ITagAggregator<INaturalTextTag> naturalTextAggregator, ISpellingDictionary dictionary)
+        public SpellingTagger(ITextBuffer buffer,
+                              ITextView view,
+                              ITagAggregator<INaturalTextTag> naturalTextAggregator,
+                              ITagAggregator<IUrlTag> urlAggregator,
+                              ISpellingDictionary dictionary)
         {
             _isClosed = false;
             _buffer = buffer;
             _naturalTextAggregator = naturalTextAggregator;
+            _urlAggregator = urlAggregator;
             _dispatcher = Dispatcher.CurrentDispatcher;
             _dictionary = dictionary;
 
@@ -96,7 +104,8 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             _misspellings = new List<MisspellingTag>();
 
             _buffer.Changed += BufferChanged;
-            _naturalTextAggregator.TagsChanged += NaturalTagsChanged;
+            _naturalTextAggregator.TagsChanged += AggregatorTagsChanged;
+            _urlAggregator.TagsChanged += AggregatorTagsChanged;
             _dictionary.DictionaryUpdated += DictionaryUpdated;
 
             view.Closed += ViewClosed;
@@ -119,11 +128,13 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 _buffer.Changed -= BufferChanged;
             if (_naturalTextAggregator != null)
                 _naturalTextAggregator.Dispose();
+            if (_urlAggregator != null)
+                _urlAggregator.Dispose();
             if (_dictionary != null)
                 _dictionary.DictionaryUpdated -= DictionaryUpdated;
         }
 
-        void NaturalTagsChanged(object sender, TagsChangedEventArgs e)
+        void AggregatorTagsChanged(object sender, TagsChangedEventArgs e)
         {
             if (_isClosed)
                 return;
@@ -190,11 +201,19 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 return new NormalizedSnapshotSpanCollection();
 
             ITextSnapshot snapshot = dirtySpan.Snapshot;
-            return new NormalizedSnapshotSpanCollection(_naturalTextAggregator.GetTags(dirtySpan)
-                                                                              .SelectMany(tag => tag.Span.GetSpans(snapshot))
-                                                                              .Select(s => s.Intersection(dirtySpan))
-                                                                              .Where(s => s.HasValue && !s.Value.IsEmpty)
-                                                                              .Select(s => s.Value));                    
+            var spans = new NormalizedSnapshotSpanCollection(
+                _naturalTextAggregator.GetTags(dirtySpan)
+                                      .SelectMany(tag => tag.Span.GetSpans(snapshot))
+                                      .Select(s => s.Intersection(dirtySpan))
+                                      .Where(s => s.HasValue && !s.Value.IsEmpty)
+                                      .Select(s => s.Value));
+
+            // Now, subtract out IUrlTag spans, since we never want to spell check URLs
+            var urlSpans = new NormalizedSnapshotSpanCollection(
+                _urlAggregator.GetTags(spans)
+                              .SelectMany(tagSpan => tagSpan.Span.GetSpans(snapshot)));
+
+            return NormalizedSnapshotSpanCollection.Difference(spans, urlSpans);
         }
 
         void AddDirtySpan(SnapshotSpan span)

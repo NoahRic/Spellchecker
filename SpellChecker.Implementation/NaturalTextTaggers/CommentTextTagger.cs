@@ -42,10 +42,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
 
-            var urlAggregator = TagAggregatorFactory.CreateTagAggregator<IUrlTag>(buffer);
             var classifierAggregator = ClassifierAggregatorService.GetClassifier(buffer);
 
-            return new CommentTextTagger(buffer, classifierAggregator, urlAggregator) as ITagger<T>;
+            return new CommentTextTagger(buffer, classifierAggregator) as ITagger<T>;
         }
     }
 
@@ -53,16 +52,13 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
     {
         ITextBuffer _buffer;
         IClassifier _classifier;
-        ITagAggregator<IUrlTag> _urlAggregator;
 
-        public CommentTextTagger(ITextBuffer buffer, IClassifier classifier, ITagAggregator<IUrlTag> urlAggregator)
+        public CommentTextTagger(ITextBuffer buffer, IClassifier classifier)
         {
             _buffer = buffer;
             _classifier = classifier;
-            _urlAggregator = urlAggregator;
 
             classifier.ClassificationChanged += ClassificationChanged;
-            urlAggregator.TagsChanged += UrlTagsChanged;
         }
 
         public IEnumerable<ITagSpan<NaturalTextTag>> GetTags(NormalizedSnapshotSpanCollection spans)
@@ -72,14 +68,6 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
             ITextSnapshot snapshot = spans[0].Snapshot;
 
-            // First, subtract out any URLs
-            var urlSpans = new NormalizedSnapshotSpanCollection(
-                _urlAggregator.GetTags(spans)
-                              .SelectMany(tagSpan => tagSpan.Span.GetSpans(snapshot)));
-
-            spans = NormalizedSnapshotSpanCollection.Difference(spans, urlSpans);
-
-            // Now, search the URLs for human-readable text
             foreach (var snapshotSpan in spans)
             {
                 Debug.Assert(snapshotSpan.Snapshot.TextBuffer == _buffer);
@@ -106,25 +94,10 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 temp(this, new SnapshotSpanEventArgs(e.ChangeSpan));
         }
 
-        void UrlTagsChanged(object sender, TagsChangedEventArgs e)
-        {
-            var temp = TagsChanged;
-            if (temp != null)
-            {
-                var spans = e.Span.GetSpans(_buffer.CurrentSnapshot);
-                if (spans.Count == 0)
-                    return;
-
-                temp(this, new SnapshotSpanEventArgs(new SnapshotSpan(spans[0].Start, spans[spans.Count - 1].End)));
-            }
-        }
-
         public event EventHandler<SnapshotSpanEventArgs> TagsChanged;
 
         public void Dispose()
         {
-            if (_urlAggregator != null)
-                _urlAggregator.TagsChanged -= UrlTagsChanged;
             if (_classifier != null)
                 _classifier.ClassificationChanged -= ClassificationChanged;
         }
