@@ -16,8 +16,8 @@ namespace SpellChecker.Definitions
 
         /// <summary>
         /// Word placed in the dictionary.  If <c>null</c>, it means
-	/// the entire dictionary has changed, and words that may have
-	/// been ignored before may now no longer be in the dictionary.
+        /// the entire dictionary has changed, and words that may have
+        /// been ignored before may now no longer be in the dictionary.
         /// </summary>
         public string Word { get; private set; }
     }
@@ -65,8 +65,8 @@ namespace SpellChecker.Definitions
 
         /// <summary>
         /// Raised when the dictionary has been changed.
-	/// When a new word is added to the dictionary, the event arguments
-	/// contains the word that was added.
+    /// When a new word is added to the dictionary, the event arguments
+    /// contains the word that was added.
         /// </summary>
         event EventHandler<SpellingEventArgs> DictionaryUpdated;
     }
