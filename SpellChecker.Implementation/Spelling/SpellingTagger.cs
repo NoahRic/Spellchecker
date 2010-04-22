@@ -65,12 +65,6 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
     sealed class SpellingTagger : ITagger<MisspellingTag>
     {
-        struct SpanToParse
-        {
-            public SnapshotSpan Span;
-            public NormalizedSnapshotSpanCollection NaturalTextSpans;
-        }
-
         ITextBuffer _buffer;
         ITagAggregator<INaturalTextTag> _naturalTextAggregator;
         ITagAggregator<IUrlTag> _urlAggregator;
@@ -282,8 +276,6 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             // Normalize the dirty spans
             ITextSnapshot snapshot = _buffer.CurrentSnapshot;
             var normalizedSpans = new NormalizedSnapshotSpanCollection(dirtySpans.Select(s => s.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive)));
-            var spansToParse = normalizedSpans.Select(s => new SpanToParse() { Span = s, NaturalTextSpans = GetNaturalLanguageSpansForDirtySpan(s) })
-                                              .ToList();
 
             _updateThread = new Thread(GuardedCheckSpellings)
             {
@@ -294,24 +286,24 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             if (!_updateThread.TrySetApartmentState(ApartmentState.STA))
                 Debug.Fail("Unable to set thread apartment state to STA, things *will* break.");
 
-            _updateThread.Start(spansToParse);
+            _updateThread.Start(normalizedSpans);
         }
 
-        void GuardedCheckSpellings(object spansToParseObject)
+        void GuardedCheckSpellings(object dirtySpansObject)
         {
             if (_isClosed)
                 return;
 
             try
             {
-                IEnumerable<SpanToParse> spansToParse = spansToParseObject as IEnumerable<SpanToParse>;
-                if (spansToParse == null)
+                IEnumerable<SnapshotSpan> dirtySpans = dirtySpansObject as IEnumerable<SnapshotSpan>;
+                if (dirtySpans == null)
                 {
                     Debug.Fail("Being asked to check a null list of dirty spans.  What gives?");
                     return;
                 }
 
-                CheckSpellings(spansToParse);
+                CheckSpellings(dirtySpans);
             }
             catch (Exception ex)
             {
@@ -322,18 +314,23 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             }
         }
 
-        void CheckSpellings(IEnumerable<SpanToParse> spansToParse)
+        void CheckSpellings(IEnumerable<SnapshotSpan> dirtySpans)
         {
             TextBox textBox = new TextBox();
             textBox.SpellCheck.IsEnabled = true;
 
             ITextSnapshot snapshot = _buffer.CurrentSnapshot;
 
-            foreach (var spanToParse in spansToParse)
+            foreach (var dirtySpan in dirtySpans)
             {
-                var dirty = spanToParse.Span.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive);
+                var dirty = dirtySpan.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive);
+
+                // We have to go back to the UI thread to get natural text spans
+                List<SnapshotSpan> naturalTextSpans = new List<SnapshotSpan>();
+                OnForegroundThread(() => naturalTextSpans = GetNaturalLanguageSpansForDirtySpan(dirty).ToList());
+
                 var naturalText = new NormalizedSnapshotSpanCollection(
-                    spanToParse.NaturalTextSpans.Select(span => span.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive)));
+                    naturalTextSpans.Select(span => span.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive)));
 
                 List<MisspellingTag> currentMisspellings = new List<MisspellingTag>(_misspellings);
                 List<MisspellingTag> newMisspellings = new List<MisspellingTag>();
@@ -380,62 +377,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             {
                 string text = span.GetText();
 
-                // We need to break this up for WPF, because it is *incredibly* slow at checking the spelling
-                for (int i = 0; i < text.Length; i++)
+                foreach (var word in GetWordsInText(text))
                 {
-                    if (!IsSpellingWordChar(text[i]))
-                        continue;
-
-                    // We've found a word (or something), so search for the next piece of whitespace or punctuation to get the entire word span.
-                    // However, we will ignore words in a few cases:
-                    // 1) Words that are CamelCased, since those are probably not "real" words to begin with.
-                    // 2) Things that look like filenames (contain a "." followed by something other than a "."). We may miss a few "real" misspellings
-                    //    here due to a missed space after a period, but that's acceptable.
-                    // 3) Words that include digits
-                    // 4) Words that include underscores
-                    // 5) Words in ALL CAPS
-                    int end = i;
-                    bool foundLower = false;
-                    bool ignoreWord = false;
-                    bool lastLetterWasADot = false;
-
-                    for (; end < text.Length; end++)
-                    {
-                        char c = text[end];
-
-                        if (!ignoreWord)
-                        {
-                            bool isUppercase = char.IsUpper(c);
-
-                            if (foundLower && isUppercase)
-                                ignoreWord = true;
-                            else if (c == '_')
-                                ignoreWord = true;
-                            else if (char.IsDigit(c))
-                                ignoreWord = true;
-                            else if (lastLetterWasADot && c != '.')
-                                ignoreWord = true;
-
-                            foundLower = foundLower || char.IsLower(c);
-                            lastLetterWasADot = (c == '.');
-                        }
-
-                        if (!IsSpellingWordChar(c))
-                            break;
-                    }
-
-                    // If this word is in ALL CAPS, ignore it
-                    if (!foundLower)
-                        ignoreWord = true;
-
-                    // Skip this word and move on to the next
-                    if (ignoreWord)
-                    {
-                        i = end - 1;
-                        continue;
-                    }
-
-                    string textToParse = text.Substring(i, end - i);
+                    string textToParse = span.Snapshot.GetText(span.Start + word.Start, word.Length);
 
                     // Now pass these off to WPF.
                     textBox.Text = textToParse;
@@ -453,9 +397,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                         if (nextChars.StartsWith("'s"))
                             length += 2;
 
-                        SnapshotSpan errorSpan = new SnapshotSpan(span.Snapshot, span.Start + i + nextSpellingErrorIndex, length);
+                        SnapshotSpan errorSpan = new SnapshotSpan(span.Start + word.Start + nextSpellingErrorIndex, length);
 
-                        if (!_dictionary.ShouldIgnoreWord(errorSpan.GetText()))
+                        if (ProbablyARealWord(errorSpan.GetText()) && !_dictionary.ShouldIgnoreWord(errorSpan.GetText()))
                         {
                             yield return new MisspellingTag(errorSpan, spellingError.Suggestions.ToArray());
                         }
@@ -464,19 +408,66 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                         if (nextSearchIndex >= textToParse.Length)
                             break;
                     }
-
-                    // Move past this word
-                    i = end - 1;
                 }
             }
         }
 
-        /// <summary>
-        /// Determine if the given character is a "spelling" word char, which includes a few more things than just characters
-        /// </summary>
-        bool IsSpellingWordChar(char c)
+        // Determine if the word is likely a real word, and not any of the following:
+        // 1) Words that are CamelCased, since those are probably not "real" words to begin with.
+        // 2) Things that look like filenames (contain a "." followed by something other than a "."). We may miss a few "real" misspellings
+        //    here due to a missed space after a period, but that's acceptable.
+        // 3) Words that include digits
+        // 4) Words that include underscores
+        // 5) Words in ALL CAPS
+        static internal bool ProbablyARealWord(string word)
         {
-            return c == '\'' || c == '`' || c == '-' || c == '.' || char.IsLetter(c);
+            if (string.IsNullOrWhiteSpace(word))
+                return false;
+
+            word = word.Trim();
+
+            // Check digits/underscores
+            if (word.Any(c => c == '_' || char.IsDigit(c)))
+                return false;
+
+            // CamelCase/UPPER
+            char firstLetter = word.FirstOrDefault(c => char.IsLetter(c));
+            if (firstLetter != 0)
+            {
+                int toSkip = word.IndexOf(firstLetter);
+                if (toSkip >= 0 && toSkip < word.Length - 1 && word.Skip(toSkip + 1).Any(c => char.IsUpper(c)))
+                    return false;
+            }
+
+            return true;
+        }
+
+        static internal IEnumerable<Microsoft.VisualStudio.Text.Span> GetWordsInText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                yield break;
+
+                // We need to break this up for WPF, because it is *incredibly* slow at checking the spelling
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (char.IsWhiteSpace(text[i]))
+                    continue;
+
+                int end = i;
+                for (; end < text.Length; end++)
+                {
+                    if (char.IsWhiteSpace(text[end]))
+                        break;
+                }
+
+                yield return Microsoft.VisualStudio.Text.Span.FromBounds(i, end);
+                i = end - 1;
+            }
+        }
+
+        void OnForegroundThread(Action action, DispatcherPriority priority = DispatcherPriority.ApplicationIdle)
+        {
+            _dispatcher.Invoke(action, priority);
         }
 
         #endregion
