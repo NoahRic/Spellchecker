@@ -23,7 +23,7 @@ namespace SpellChecker.Test
         public void GetWordsTest()
         {
             CheckWords("This!  Is an amazing1 sentence, I think; but_some of ThEse words Should be ignore.d I think.",
-             new List<string>() { "This!", "Is", "an", "amazing1", "sentence,", "I", "think;", "but_some", "of", "ThEse", "words", "Should", "be", "ignore.d", "I", "think." });
+             new List<string>() { "This", "Is", "an", "amazing1", "sentence", "I", "think", "but_some", "of", "ThEse", "words", "Should", "be", "ignore.d", "I", "think." });
         }
 
         [TestMethod]
@@ -67,6 +67,16 @@ namespace SpellChecker.Test
                 NotAWord(word);
 
             foreach (string word in Words("   A", "I", "Oh"))
+                AWord(word);
+        }
+
+        [TestMethod]
+        public void SkipWordsWithDotInTheMiddle()
+        {
+            foreach (string word in Words("foo.exe", "wordlogictests.cs", "include.h"))
+                NotAWord(word);
+
+            foreach (string word in Words("this."))
                 AWord(word);
         }
 

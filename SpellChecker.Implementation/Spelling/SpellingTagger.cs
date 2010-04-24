@@ -381,6 +381,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 {
                     string textToParse = span.Snapshot.GetText(span.Start + word.Start, word.Length);
 
+                    if (!ProbablyARealWord(textToParse))
+                        continue;
+
                     // Now pass these off to WPF.
                     textBox.Text = textToParse;
 
@@ -430,6 +433,11 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             if (word.Any(c => c == '_' || char.IsDigit(c)))
                 return false;
 
+            // Check for a . in the middle of the word
+            int firstDot = word.IndexOf('.');
+            if (firstDot >= 0 && firstDot < word.Length - 1 && word.Skip(firstDot + 1).Any(c => !IsWordBreakCharacter(c)))
+                return false;
+
             // CamelCase/UPPER
             char firstLetter = word.FirstOrDefault(c => char.IsLetter(c));
             if (firstLetter != 0)
@@ -447,22 +455,29 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             if (string.IsNullOrWhiteSpace(text))
                 yield break;
 
-                // We need to break this up for WPF, because it is *incredibly* slow at checking the spelling
+            // We need to break this up for WPF, because it is *incredibly* slow at checking the spelling
             for (int i = 0; i < text.Length; i++)
             {
-                if (char.IsWhiteSpace(text[i]))
+                if (IsWordBreakCharacter(text[i]))
                     continue;
 
                 int end = i;
                 for (; end < text.Length; end++)
                 {
-                    if (char.IsWhiteSpace(text[end]))
+                    if (IsWordBreakCharacter(text[end]))
                         break;
                 }
 
                 yield return Microsoft.VisualStudio.Text.Span.FromBounds(i, end);
                 i = end - 1;
             }
+        }
+
+        // Word break characters.  Specifically, exclude _.'
+        const string wordBreakChars = ",/<>?;:\"[]\\{}|-=+~!@#$%^&*() \t";
+        static bool IsWordBreakCharacter(char c)
+        {
+            return wordBreakChars.Contains(c) || char.IsWhiteSpace(c);
         }
 
         void OnForegroundThread(Action action, DispatcherPriority priority = DispatcherPriority.ApplicationIdle)
