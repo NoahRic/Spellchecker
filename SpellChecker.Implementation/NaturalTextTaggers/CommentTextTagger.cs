@@ -42,6 +42,10 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
 
+            // Due to an issue with the built-in C# classifier, we avoid using it.
+            if (buffer.ContentType.IsOfType("csharp"))
+                return new CSharpCommentTextTagger(buffer) as ITagger<T>;
+
             var classifierAggregator = ClassifierAggregatorService.GetClassifier(buffer);
 
             return new CommentTextTagger(buffer, classifierAggregator) as ITagger<T>;
