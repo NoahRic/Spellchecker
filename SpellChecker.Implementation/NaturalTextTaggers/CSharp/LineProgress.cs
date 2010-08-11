@@ -1,6 +1,6 @@
-﻿using Microsoft.VisualStudio.Text;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
+using Microsoft.VisualStudio.Text;
 
 namespace Microsoft.VisualStudio.Language.Spellchecker
 {
