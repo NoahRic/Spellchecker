@@ -312,6 +312,17 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 // on VS shutdown, at which point calls into WPF throw exceptions.  If we don't guard against those exceptions, the
                 // user will see a crash on exit.
             }
+            finally
+            {
+                try
+                {
+                    Dispatcher.CurrentDispatcher.InvokeShutdown();
+                }
+                catch (Exception)
+                {
+                    // Again, ignore this failure.
+                }
+            }
         }
 
         void CheckSpellings(IEnumerable<SnapshotSpan> dirtySpans)
