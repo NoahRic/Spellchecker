@@ -16,7 +16,7 @@ using Microsoft.VisualStudio.Text.Editor;
 namespace Microsoft.VisualStudio.Language.Spellchecker
 {
 
-	[Export(typeof(IViewTaggerProvider))]
+    [Export(typeof(IViewTaggerProvider))]
     [ContentType("any")]
     [TagType(typeof(MisspellingTag))]
     sealed class SpellingTaggerProvider : IViewTaggerProvider
@@ -326,20 +326,20 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             }
         }
 
-		//TODO need a way to configure languages.
-		static string languages = "en-US;de-DE";
-		public static string Languages { get { return languages; } set { languages = value; } }
+        //TODO need a way to configure languages.
+        static string languages = "en-US;de-DE";
+        public static string Languages { get { return languages; } set { languages = value; } }
 
         void CheckSpellings(IEnumerable<SnapshotSpan> dirtySpans)
         {
-			var textBoxes = new List<TextBox>();
+            var textBoxes = new List<TextBox>();
 
-			foreach (var lang in Languages.Split(new char[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)) {
-				TextBox textBox = new TextBox();
-				textBox.SpellCheck.IsEnabled = true;
-				textBox.Language = System.Windows.Markup.XmlLanguage.GetLanguage(lang);
-				textBoxes.Add(textBox);
-			}
+            foreach (var lang in Languages.Split(new char[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)) {
+                TextBox textBox = new TextBox();
+                textBox.SpellCheck.IsEnabled = true;
+                textBox.Language = System.Windows.Markup.XmlLanguage.GetLanguage(lang);
+                textBoxes.Add(textBox);
+            }
 
             ITextSnapshot snapshot = _buffer.CurrentSnapshot;
 
@@ -395,9 +395,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         
         IEnumerable<MisspellingTag> GetMisspellingsInSpans(NormalizedSnapshotSpanCollection spans, List<TextBox> textBoxes)
         {
-			var currentLang = textBoxes.First();
+            var currentLang = textBoxes.First();
 
-			foreach (var span in spans)
+            foreach (var span in spans)
             {
                 string text = span.GetText();
 
@@ -413,25 +413,25 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
                     int nextSearchIndex = 0;
                     int nextSpellingErrorIndex = -1;
-					int nextSpellingErrorIndexOtherLang = -1;
+                    int nextSpellingErrorIndexOtherLang = -1;
 
                     while (-1 != (nextSpellingErrorIndex = currentLang.GetNextSpellingErrorCharacterIndex(nextSearchIndex, LogicalDirection.Forward)))
                     {
-						TextBox validInLang;
-						while (
-							(validInLang = textBoxes
-								.Where(lang => lang != currentLang)
-								.FirstOrDefault(lang => {
-									nextSpellingErrorIndexOtherLang = lang.GetNextSpellingErrorCharacterIndex(nextSpellingErrorIndex, LogicalDirection.Forward);
-									return nextSpellingErrorIndexOtherLang == -1 || nextSpellingErrorIndexOtherLang > nextSpellingErrorIndex;
-								}))
-							!= null) 
-						{
-							currentLang = validInLang;
-							if (nextSpellingErrorIndexOtherLang == -1) break;
-							nextSpellingErrorIndex = nextSpellingErrorIndexOtherLang;
-						}
-						if (nextSpellingErrorIndexOtherLang == -1) break;
+                        TextBox validInLang;
+                        while (
+                            (validInLang = textBoxes
+                                .Where(lang => lang != currentLang)
+                                .FirstOrDefault(lang => {
+                                    nextSpellingErrorIndexOtherLang = lang.GetNextSpellingErrorCharacterIndex(nextSpellingErrorIndex, LogicalDirection.Forward);
+                                    return nextSpellingErrorIndexOtherLang == -1 || nextSpellingErrorIndexOtherLang > nextSpellingErrorIndex;
+                                }))
+                            != null) 
+                        {
+                            currentLang = validInLang;
+                            if (nextSpellingErrorIndexOtherLang == -1) break;
+                            nextSpellingErrorIndex = nextSpellingErrorIndexOtherLang;
+                        }
+                        if (nextSpellingErrorIndexOtherLang == -1) break;
 
                         var spellingError = currentLang.GetSpellingError(nextSpellingErrorIndex);
                         int length = currentLang.GetSpellingErrorLength(nextSpellingErrorIndex);
@@ -463,7 +463,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         // 3) Words that include digits
         // 4) Words that include underscores
         // 5) Words in ALL CAPS
-		// 6) Email addresses.
+        // 6) Email addresses.
         static internal bool ProbablyARealWord(string word)
         {
             if (string.IsNullOrWhiteSpace(word))
