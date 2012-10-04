@@ -396,7 +396,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         IEnumerable<MisspellingTag> GetMisspellingsInSpans(NormalizedSnapshotSpanCollection spans, List<TextBox> textBoxes)
         {
             var currentLang = textBoxes.First();
-
+            
             foreach (var span in spans)
             {
                 string text = span.GetText();
@@ -409,7 +409,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                         continue;
 
                     // Now pass these off to WPF.
-                    foreach (var textBox in textBoxes) textBox.Text = textToParse;
+                    currentLang.Text = textToParse;
 
                     int nextSearchIndex = 0;
                     int nextSpellingErrorIndex = -1;
@@ -428,6 +428,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                             != null) 
                         {
                             currentLang = validInLang;
+                            if (currentLang.Text == "") currentLang.Text = textToParse;
                             if (nextSpellingErrorIndexOtherLang == -1) break;
                             nextSpellingErrorIndex = nextSpellingErrorIndexOtherLang;
                         }
