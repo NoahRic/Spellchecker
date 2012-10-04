@@ -15,7 +15,8 @@ using Microsoft.VisualStudio.Text.Editor;
 
 namespace Microsoft.VisualStudio.Language.Spellchecker
 {
-    [Export(typeof(IViewTaggerProvider))]
+
+	[Export(typeof(IViewTaggerProvider))]
     [ContentType("any")]
     [TagType(typeof(MisspellingTag))]
     sealed class SpellingTaggerProvider : IViewTaggerProvider
@@ -325,10 +326,20 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             }
         }
 
+		//TODO need a way to configure languages.
+		static string languages = "en-US;de-DE";
+		public static string Languages { get { return languages; } set { languages = value; } }
+
         void CheckSpellings(IEnumerable<SnapshotSpan> dirtySpans)
         {
-            TextBox textBox = new TextBox();
-            textBox.SpellCheck.IsEnabled = true;
+			var textBoxes = new List<TextBox>();
+
+			foreach (var lang in Languages.Split(new char[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)) {
+				TextBox textBox = new TextBox();
+				textBox.SpellCheck.IsEnabled = true;
+				textBox.Language = System.Windows.Markup.XmlLanguage.GetLanguage(lang);
+				textBoxes.Add(textBox);
+			}
 
             ITextSnapshot snapshot = _buffer.CurrentSnapshot;
 
@@ -347,7 +358,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 List<MisspellingTag> newMisspellings = new List<MisspellingTag>();
 
                 int removed = currentMisspellings.RemoveAll(tag => tag.ToTagSpan(snapshot).Span.OverlapsWith(dirty));
-                newMisspellings.AddRange(GetMisspellingsInSpans(naturalText, textBox));
+                newMisspellings.AddRange(GetMisspellingsInSpans(naturalText, textBoxes));
                
                 // Also remove empties
                 removed += currentMisspellings.RemoveAll(tag => tag.ToTagSpan(snapshot).Span.IsEmpty);
@@ -382,9 +393,11 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             }
         }
         
-        IEnumerable<MisspellingTag> GetMisspellingsInSpans(NormalizedSnapshotSpanCollection spans, TextBox textBox)
+        IEnumerable<MisspellingTag> GetMisspellingsInSpans(NormalizedSnapshotSpanCollection spans, List<TextBox> textBoxes)
         {
-            foreach (var span in spans)
+			var currentLang = textBoxes.First();
+
+			foreach (var span in spans)
             {
                 string text = span.GetText();
 
@@ -396,15 +409,32 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                         continue;
 
                     // Now pass these off to WPF.
-                    textBox.Text = textToParse;
+                    foreach (var textBox in textBoxes) textBox.Text = textToParse;
 
                     int nextSearchIndex = 0;
                     int nextSpellingErrorIndex = -1;
+					int nextSpellingErrorIndexOtherLang = -1;
 
-                    while (-1 != (nextSpellingErrorIndex = textBox.GetNextSpellingErrorCharacterIndex(nextSearchIndex, LogicalDirection.Forward)))
+                    while (-1 != (nextSpellingErrorIndex = currentLang.GetNextSpellingErrorCharacterIndex(nextSearchIndex, LogicalDirection.Forward)))
                     {
-                        var spellingError = textBox.GetSpellingError(nextSpellingErrorIndex);
-                        int length = textBox.GetSpellingErrorLength(nextSpellingErrorIndex);
+						TextBox validInLang;
+						while (
+							(validInLang = textBoxes
+								.Where(lang => lang != currentLang)
+								.FirstOrDefault(lang => {
+									nextSpellingErrorIndexOtherLang = lang.GetNextSpellingErrorCharacterIndex(nextSpellingErrorIndex, LogicalDirection.Forward);
+									return nextSpellingErrorIndexOtherLang == -1 || nextSpellingErrorIndexOtherLang > nextSpellingErrorIndex;
+								}))
+							!= null) 
+						{
+							currentLang = validInLang;
+							if (nextSpellingErrorIndexOtherLang == -1) break;
+							nextSpellingErrorIndex = nextSpellingErrorIndexOtherLang;
+						}
+						if (nextSpellingErrorIndexOtherLang == -1) break;
+
+                        var spellingError = currentLang.GetSpellingError(nextSpellingErrorIndex);
+                        int length = currentLang.GetSpellingErrorLength(nextSpellingErrorIndex);
 
                         // Work around what looks to be a WPF bug; if the spelling error is followed by a 's, then include that in the error span.
                         string nextChars = textToParse.Substring(nextSpellingErrorIndex + length).ToLowerInvariant();
@@ -433,6 +463,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         // 3) Words that include digits
         // 4) Words that include underscores
         // 5) Words in ALL CAPS
+		// 6) Email addresses.
         static internal bool ProbablyARealWord(string word)
         {
             if (string.IsNullOrWhiteSpace(word))
@@ -440,8 +471,8 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
             word = word.Trim();
 
-            // Check digits/underscores
-            if (word.Any(c => c == '_' || char.IsDigit(c)))
+            // Check digits/underscores/emails
+            if (word.Any(c => c == '_' || char.IsDigit(c) || c == '@'))
                 return false;
 
             // Check for a . in the middle of the word
