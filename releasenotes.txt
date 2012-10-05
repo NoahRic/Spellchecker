@@ -1,0 +1,38 @@
+Multi-Language Spell Checker
+
+Motivation:
+
+When developing Software with an UI other than english, spell checker needs to be able to spell check enligsh and the UI langauge,
+because many programmers still use english for comments, error messages etc. 
+
+Implemented Features:
+
+- Support for spell checking multiple languages.
+   The checker checks for correct spelling in multiple configurable languages in the same text.
+- Configurable language support throuhg smarttags.
+- Configuration of custom Dictionaries. 
+
+Todo:
+Bugfixing
+
+
+Changes:
+
+SpellingTagger.cs:
+
+class SpellingTagger:
+
+- Introduced SpellingTagger.Language Property
+
+CheckSpellings:
+Instead of only one textBox, there is a List of textBoxes for each language. The textboxes are initialized according to the Languages Property, and default or custom dictionaries are loaded:
+
+
+GetMisspellingsInSpans:
+This method now checks in every configured language. Instead of the textBox parameter it expects a List of textboxes.
+
+The while loop looping over spelling errors has become rather complicated, as it has to distinguish many cases, and also needs to be smart when detecting different languages in the same sentence.
+
+
+SmartTags:
+Additional SmartTags and a configuration dialog for configuring languages are provided.

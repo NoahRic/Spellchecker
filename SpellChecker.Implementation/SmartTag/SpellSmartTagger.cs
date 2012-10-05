@@ -14,6 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
@@ -164,6 +165,19 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             dictionaryActions.Add(new SpellDictionarySmartTagAction(word, _dictionary, "Ignore all", ignore: true));
             dictionaryActions.Add(new SpellDictionarySmartTagAction(word, _dictionary, "Add to dictionary", ignore: false));
             smartTagSets.Add(new SmartTagActionSet(dictionaryActions.AsReadOnly()));
+
+			var langs = SpellingTagger.Languages
+				.Split(new char[] { ';', ',' }, System.StringSplitOptions.RemoveEmptyEntries)
+				.Select(lang => lang.Split(':').First())
+				.Where(lang => lang[0] != '#')
+				.Select(lang => new SpellLanguageSmartTagItem(lang))
+				.ToList<ISmartTagAction>();
+			langs.Insert(0, new SpellLanguageSmartTagItem("Languages:"));
+			smartTagSets.Add(new SmartTagActionSet(langs.AsReadOnly()));
+
+			var addremove = new List<ISmartTagAction>();
+			addremove.Add(new SpellAddRemoveLanguageSmartTagAction());
+			smartTagSets.Add(new SmartTagActionSet(addremove.AsReadOnly()));
 
             return smartTagSets.AsReadOnly();
         }

@@ -4,9 +4,6 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using System.Text;
-using System.IO;
-using System.Reflection;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Threading;
@@ -19,10 +16,10 @@ using Microsoft.VisualStudio.Text.Editor;
 namespace Microsoft.VisualStudio.Language.Spellchecker
 {
 
-    [Export(typeof(IViewTaggerProvider))]
+	[Export(typeof(IViewTaggerProvider))]
     [ContentType("any")]
     [TagType(typeof(MisspellingTag))]
-    sealed class SpellingTaggerProvider : IViewTaggerProvider
+    sealed class SpellingTaggerProviderOriginal : IViewTaggerProvider
     {
         [Import]
         IViewTagAggregatorFactoryService AggregatorFactory = null;
@@ -36,38 +33,21 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 return null;
 
             SpellingTagger spellingTagger;
-            if (textView.Properties.TryGetProperty(typeof(SpellingTagger), out spellingTagger))
+            if (textView.Properties.TryGetProperty(typeof(SpellingTaggerOriginal), out spellingTagger))
                 return spellingTagger as ITagger<T>;
 
             var dictionary = SpellingDictionaryFactory.GetDictionary(buffer);
             var naturalTextAggregator = AggregatorFactory.CreateTagAggregator<INaturalTextTag>(textView, 
                                                                                                TagAggregatorOptions.MapByContentType);
             var urlAggregator = AggregatorFactory.CreateTagAggregator<IUrlTag>(textView);
-            spellingTagger = new SpellingTagger(buffer, textView, naturalTextAggregator, urlAggregator, dictionary);
-            textView.Properties[typeof(SpellingTagger)] = spellingTagger;
+            spellingTagger = new SpellingTaggerOriginal(buffer, textView, naturalTextAggregator, urlAggregator, dictionary);
+            textView.Properties[typeof(SpellingTaggerOriginal)] = spellingTagger;
 
             return spellingTagger as ITagger<T>;
         }
     }
 
-    class MisspellingTag : IMisspellingTag
-    {
-        public MisspellingTag(SnapshotSpan span, IEnumerable<string> suggestions)
-        {
-            Span = span.Snapshot.CreateTrackingSpan(span, SpanTrackingMode.EdgeExclusive);
-            Suggestions = suggestions;
-        }
-
-        public ITrackingSpan Span { get; private set; }
-        public IEnumerable<string> Suggestions { get; private set; }
-
-        public ITagSpan<MisspellingTag> ToTagSpan(ITextSnapshot snapshot)
-        {
-            return new TagSpan<MisspellingTag>(Span.GetSpan(snapshot), this);
-        }
-    }
-
-    sealed class SpellingTagger : ITagger<MisspellingTag>
+    sealed class SpellingTaggerOriginal : ITagger<MisspellingTag>
     {
         ITextBuffer _buffer;
         ITagAggregator<INaturalTextTag> _naturalTextAggregator;
@@ -85,7 +65,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
         bool _isClosed;
 
-        public SpellingTagger(ITextBuffer buffer,
+        public SpellingTaggerOriginal(ITextBuffer buffer,
                               ITextView view,
                               ITagAggregator<INaturalTextTag> naturalTextAggregator,
                               ITagAggregator<IUrlTag> urlAggregator,
@@ -329,89 +309,14 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             }
         }
 
-		static string configDir = null;
-		public static string ConfigDirectory {
-			get {
-				if (configDir == null) {
-					var info = new System.IO.DirectoryInfo(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VisualStudioSpellChecker"));
-					if (!info.Exists) info.Create();
-					configDir = info.FullName;
-				}
-				return configDir;
-			}
-		}
-
-		const string DefaultLanguages = "en-US;#es-ES;#de-DE;#fr-FR;#en-AU:*;#en-CA:*;#en-GB:*;#it-IT:*"; // Insert custom default dictionaries from the Dictionaries folder that are included in the vsix in the dll path here. See syntax of the Languages Property.
-
-        static string languages = null;
-		// syntax:[#] culture { : dictionary-file } { ; [#] culture { : dictionary-file } } ), where dictionary-file is a filename of a dictionary file located in the ConfigDirectory. # entries are available but disabled.
-        public static string Languages {
-			get {
-				if (languages == null) {
-					var file = System.IO.Path.Combine(ConfigDirectory, "languages.config");
-					if (!System.IO.File.Exists(file)) languages = DefaultLanguages;
-					else languages = System.IO.File.ReadAllLines(file).FirstOrDefault() ?? "en-US";
-				}
-				return languages;
-			}
-			set {
-				languages = value;
-				var file = System.IO.Path.Combine(ConfigDirectory, "languages.config");
-				System.IO.File.WriteAllText(file, languages);
-			}
-		}
-
 		public static TimeSpan dt;
-
-		public static void ImportDic(string file) { // import dic files from NetSpell & ISpell
-			var newfile = System.IO.Path.Combine(SpellingTagger.ConfigDirectory, System.IO.Path.GetFileName(file));
-			newfile = System.IO.Path.ChangeExtension(newfile, "lex");
-			var ext = System.IO.Path.GetExtension(file);
-			if (ext == ".dic" && !File.Exists(newfile)) {
-				var lines = File.ReadAllLines(file)
-					.SkipWhile(s => s != "[Words]")
-					.Skip(1)
-					.Select(s => s.Split('/').First());
-				File.WriteAllLines(newfile, lines);
-			}
-		}
-
-		public static Uri ImportDefaultDictionaries(string culture) { // import default .dic & .lex files from config & dll directory.
-			var id = "_" + culture;
-			var configid = System.IO.Path.Combine(SpellingTagger.ConfigDirectory, id);
-			var dllid = System.IO.Path.Combine(Assembly.GetExecutingAssembly().CodeBase, id);
-
-			if (!File.Exists(configid + ".lex")) {
-				if (File.Exists(configid + ".dic")) ImportDic(configid + ".dic");
-				if (File.Exists(dllid + ".dic")) ImportDic(dllid + ".dic");
-				if (File.Exists(dllid + ".lex")) File.Copy(dllid + ".lex", configid + ".lex");
-			}
-			if (File.Exists(configid + ".lex")) return new Uri(configid + ".lex");
-			else return null;
-		}
 
         void CheckSpellings(IEnumerable<SnapshotSpan> dirtySpans)
         {
 			var t0 = DateTime.Now;
 
-            var textBoxes = new List<TextBox>();
-
-            foreach (var lang in Languages.Split(new char[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries).Where(l => !l.StartsWith("#"))) {
-				TextBox textBox = new TextBox();
-				var tokens = lang.Split(':');
-				textBox.Language = System.Windows.Markup.XmlLanguage.GetLanguage(tokens.First());
-				// support custom dictionaries. (with the Languages syntax : culture { : dictionary-file } { ; culture { : dictionary-file } } ), where dictionary-file is a filename of a dictionary file located in the ConfigDirectory.
-				// The dictionary file is a text file with one word per line.
-                textBox.SpellCheck.IsEnabled = true;
-				foreach (var token in tokens.Skip(1)) {
-					Uri uri;
-					if (token == "*") uri = ImportDefaultDictionaries(tokens.First());
-					else uri = new Uri("file://" + ConfigDirectory.Replace("\\", "/") + "/" + token);
-					
-					if (uri != null) textBox.SpellCheck.CustomDictionaries.Add(uri);
-				}
-                textBoxes.Add(textBox);
-            }
+			TextBox textBox = new TextBox();
+			textBox.SpellCheck.IsEnabled = true;
 
             ITextSnapshot snapshot = _buffer.CurrentSnapshot;
 
@@ -430,11 +335,8 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 List<MisspellingTag> newMisspellings = new List<MisspellingTag>();
 
                 int removed = currentMisspellings.RemoveAll(tag => tag.ToTagSpan(snapshot).Span.OverlapsWith(dirty));
-				try {
-					newMisspellings.AddRange(GetMisspellingsInSpans(naturalText, textBoxes));
-				} catch (Exception ex) {
-
-				}
+                newMisspellings.AddRange(GetMisspellingsInSpans(naturalText, textBox));
+               
                 // Also remove empties
                 removed += currentMisspellings.RemoveAll(tag => tag.ToTagSpan(snapshot).Span.IsEmpty);
 
@@ -470,199 +372,51 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 			dt = DateTime.Now - t0;
         }
         
-		class LanguageSpan {
-			public string Text;
-			public int Start = 0;
-			public int Length;
-			public int EndOfFirstError = 0;
-			public TextBox Language;
-			public List<MisspellingTag> Errors = new List<MisspellingTag>();
-		}
-
-		const int MinForeignWordSequence = 3; // the minimum number of words in another language in a stentence's part to not count as misspelled words.
-
-	    IEnumerable<MisspellingTag> GetMisspellingsInSpans(NormalizedSnapshotSpanCollection spans, List<TextBox> textBoxes)
+        IEnumerable<MisspellingTag> GetMisspellingsInSpans(NormalizedSnapshotSpanCollection spans, TextBox textBox)
         {
-			var currentLang = textBoxes.First();
 
-			foreach (var span in spans) {
-				string text = span.GetText();
-				if (string.IsNullOrWhiteSpace(text)) continue;
+            foreach (var span in spans)
+            {
+                string text = span.GetText();
 
-				int sentenceStart = 0;
+                foreach (var word in GetWordsInText(text))
+                {
+                    string textToParse = span.Snapshot.GetText(span.Start + word.Start, word.Length);
 
-				foreach (var sentence in text.Split(new string[] { ". ", ", ", "; ", ": ", "? ", "! ", " \"", "\" ", "\".", "\",", "\";" }, StringSplitOptions.None)) {
+                    if (!ProbablyARealWord(textToParse))
+                        continue;
 
-					if (string.IsNullOrWhiteSpace(sentence)) {
-						sentenceStart += sentence.Length + 2;
-						continue;
-					}
+                    // Now pass these off to WPF.
+                    textBox.Text = textToParse;
 
-					List<LanguageSpan> languageSpans = new List<LanguageSpan>();
+                    int nextSearchIndex = 0;
+                    int nextSpellingErrorIndex = -1;
+					int nextSpellingErrorIndexOtherLang = -1;
 
-					foreach (var word in GetWordsInText(sentence)) {
-						string textToParse = span.Snapshot.GetText(span.Start + sentenceStart + word.Start, word.Length);
+					while (-1 != (nextSpellingErrorIndex = textBox.GetNextSpellingErrorCharacterIndex(nextSearchIndex, LogicalDirection.Forward)))
+                    {
 
-						if (!ProbablyARealWord(textToParse))
-							continue;
+                        var spellingError = textBox.GetSpellingError(nextSpellingErrorIndex);
+                        int length = textBox.GetSpellingErrorLength(nextSpellingErrorIndex);
 
-						// Now pass these off to WPF.
-						currentLang.Text = textToParse;
+                        // Work around what looks to be a WPF bug; if the spelling error is followed by a 's, then include that in the error span.
+                        string nextChars = textToParse.Substring(nextSpellingErrorIndex + length).ToLowerInvariant();
+                        if (nextChars.StartsWith("'s"))
+                            length += 2;
 
-						// System.Diagnostics.Debugger.Log(1, "debug",  textToParse + " ");
+                        SnapshotSpan errorSpan = new SnapshotSpan(span.Start + word.Start + nextSpellingErrorIndex, length);
 
-						int nextSearchIndex = 0;
-						int nextSpellingErrorIndex = -1;
-						int nextSpellingErrorIndexOtherLang = -1;
+                        if (ProbablyARealWord(errorSpan.GetText()) && !_dictionary.ShouldIgnoreWord(errorSpan.GetText()))
+                        {
+                            yield return new MisspellingTag(errorSpan, spellingError.Suggestions.ToArray());
+                        }
 
-						var currentLanguageSpan = new LanguageSpan { Language = currentLang, Text = textToParse, Start = sentenceStart + word.Start, Length = 0 };
-
-						while (-1 != (nextSpellingErrorIndex = currentLang.GetNextSpellingErrorCharacterIndex(nextSearchIndex, LogicalDirection.Forward))) {
-							TextBox validInLang;
-							while (
-								(validInLang = textBoxes
-									.Where(lang => lang != currentLang)
-									.FirstOrDefault(lang => {
-										if (lang.Text != textToParse) lang.Text = textToParse;
-										nextSpellingErrorIndexOtherLang = lang.GetNextSpellingErrorCharacterIndex(nextSpellingErrorIndex, LogicalDirection.Forward);
-										return nextSpellingErrorIndexOtherLang == -1 || nextSpellingErrorIndexOtherLang > nextSpellingErrorIndex;
-									}))
-								!= null) {
-								nextSpellingErrorIndex = nextSpellingErrorIndexOtherLang;
-								currentLang = validInLang;
-								if (nextSpellingErrorIndex > currentLanguageSpan.Length) {
-									if (currentLanguageSpan.Length > 0) {
-										languageSpans.Add(currentLanguageSpan);
-										currentLanguageSpan = new LanguageSpan { Language = currentLang, Text = textToParse, Start = sentenceStart + word.Start, Length = 0 };
-									} else {
-										currentLanguageSpan.Length = nextSpellingErrorIndex;
-									}
-								} else if (nextSpellingErrorIndex == -1) {
-									currentLanguageSpan.Length = textToParse.Length;
-									currentLanguageSpan.Language = currentLang;
-									break;
-								}
-								currentLanguageSpan.Language = currentLang;
-							}
-
-							if (nextSpellingErrorIndex == -1) break;
-
-							languageSpans.Add(currentLanguageSpan);
-							currentLanguageSpan = new LanguageSpan { Language = currentLang, Text = textToParse, Start = sentenceStart + word.Start };
-
-
-							var spellingError = currentLang.GetSpellingError(nextSpellingErrorIndex);
-							int length = currentLang.GetSpellingErrorLength(nextSpellingErrorIndex);
-
-							// Work around what looks to be a WPF bug; if the spelling error is followed by a 's, then include that in the error span.
-							string nextChars = textToParse.Substring(nextSpellingErrorIndex + length).ToLowerInvariant();
-							if (nextChars.StartsWith("'s"))
-								length += 2;
-
-							SnapshotSpan errorSpan = new SnapshotSpan(span.Start + currentLanguageSpan.Start + nextSpellingErrorIndex, length);
-
-							if (ProbablyARealWord(errorSpan.GetText()) && !_dictionary.ShouldIgnoreWord(errorSpan.GetText())) {
-								var err = new MisspellingTag(errorSpan, spellingError.Suggestions.ToArray());
-								if (textBoxes.Count > 1) {	// support for multiple languages
-									currentLanguageSpan.Errors.Add(new MisspellingTag(errorSpan, spellingError.Suggestions.ToArray()));
-									if (currentLanguageSpan.EndOfFirstError == 0) currentLanguageSpan.EndOfFirstError = nextSpellingErrorIndex + length;
-								} else { // only one language
-									yield return err;
-								}
-							}
-
-							nextSearchIndex = nextSpellingErrorIndex + length;
-							if (nextSearchIndex >= textToParse.Length) {
-								break;
-							} else {
-								currentLanguageSpan.Length = nextSearchIndex;
-								languageSpans.Add(currentLanguageSpan);
-							}
-						}
-
-						currentLanguageSpan.Length = textToParse.Length - nextSearchIndex;
-						languageSpans.Add(currentLanguageSpan);
-					}
-
-					if (textBoxes.Count <= 1) { // only one language to check, so we're finished with this sentence.
-						sentenceStart += sentence.Length + 2;
-						continue;
-					}
-
-					// select language that matches best
-					TextBox bestlang = null;
-					var groups = languageSpans
-						.Where(s => s.Errors.Count == 0) // only select spans without spelling errors.
-						.GroupBy(s => s.Language)
-						.Select(g => new { Language = g.Key, Length = g.Sum(s => s.Length + 1) });
-					int max = 0;
-					foreach (var group in groups) {
-						if (group.Length > max) {
-							max = group.Length;
-							bestlang = group.Language;
-						}
-					}
-
-					// process spans;
-					int i = 0;
-					bool preceedingForeignSpans = true;
-					int foreignSpanIndex = 0;
-					int foreignSequence = 0;
-					while (i < languageSpans.Count) {
-						var lspan = languageSpans[i];
-						if (lspan.Language != bestlang) { // this span is a foreign span i.e. checked with a different language than bestlang
-							foreignSpanIndex++;
-							if (foreignSpanIndex > foreignSequence) {
-								foreignSequence = languageSpans // check for a sequence of at least MinForeignWordSequence words in the same language.
-									.Skip(i)
-									.TakeWhile(s => s.Language == lspan.Language && s.Errors.Count == 0)
-									.Count();
-								if (foreignSequence < MinForeignWordSequence) foreignSequence = 0;
-								else foreignSequence += foreignSpanIndex - 1;
-							}
-							if ((foreignSpanIndex > foreignSequence) && (preceedingForeignSpans || foreignSpanIndex > 1 || lspan.Errors.Count != 1)) {
-								// recheck preceding foreign spans & foreign span sequences not bigger than MinForeignWordSequence, excluding leading errors & foreign spans with more than one error.
-								// recheck span
-								bestlang.Text = lspan.Text;
-								int nextSearchIndex = 0;
-								int nextSpellingErrorIndex = -1;
-								if (!preceedingForeignSpans && foreignSpanIndex == 1 && lspan.Errors.Count > 0) {
-									yield return lspan.Errors[0]; // no need to check the first spell error as it was preceeded by a bestlang span, so it's also a bestlang spelling error.
-									nextSearchIndex = lspan.EndOfFirstError;
-								}
-								while (-1 != (nextSpellingErrorIndex = bestlang.GetNextSpellingErrorCharacterIndex(nextSearchIndex, LogicalDirection.Forward))) {
-									var spellingError = bestlang.GetSpellingError(nextSpellingErrorIndex);
-									int length = bestlang.GetSpellingErrorLength(nextSpellingErrorIndex);
-
-									// Work around what looks to be a WPF bug; if the spelling error is followed by a 's, then include that in the error span.
-									string nextChars = bestlang.Text.Substring(nextSpellingErrorIndex + length).ToLowerInvariant();
-									if (nextChars.StartsWith("'s"))
-										length += 2;
-
-									SnapshotSpan errorSpan = new SnapshotSpan(span.Start + lspan.Start + nextSpellingErrorIndex, length);
-
-									if (ProbablyARealWord(errorSpan.GetText()) && !_dictionary.ShouldIgnoreWord(errorSpan.GetText())) {
-										yield return new MisspellingTag(errorSpan, spellingError.Suggestions.ToArray());
-									}
-
-									nextSearchIndex = nextSpellingErrorIndex + length;
-									if (nextSearchIndex >= bestlang.Text.Length)
-										break;
-								}
-								i++;
-								continue;
-							}
-						} else {
-							foreignSpanIndex = 0;
-							foreignSequence = 0;
-							preceedingForeignSpans = false;
-						}
-						foreach (var err in lspan.Errors) yield return err; // yield errors of bestlang spans.
-						i++;
-					}
-					sentenceStart += sentence.Length + 2;
-				}
-			}
+                        nextSearchIndex = nextSpellingErrorIndex + length;
+                        if (nextSearchIndex >= textToParse.Length)
+                            break;
+                    }
+                }
+            }
         }
 
         // Determine if the word is likely a real word, and not any of the following:
@@ -672,7 +426,6 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         // 3) Words that include digits
         // 4) Words that include underscores
         // 5) Words in ALL CAPS
-        // 6) Email addresses.
         static internal bool ProbablyARealWord(string word)
         {
             if (string.IsNullOrWhiteSpace(word))
@@ -680,8 +433,8 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
             word = word.Trim();
 
-            // Check digits/underscores/emails
-            if (word.Any(c => c == '_' || char.IsDigit(c) || c == '@'))
+            // Check digits/underscores
+            if (word.Any(c => c == '_' || char.IsDigit(c)))
                 return false;
 
             // Check for a . in the middle of the word

@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B3E23353-454E-40CD-8871-7D2EA1EC6355}"
 	ProjectSection(SolutionItems) = preProject
 		Local.testsettings = Local.testsettings
+		releasenotes.txt = releasenotes.txt
 		SpellChecker.vsmdi = SpellChecker.vsmdi
 		TraceAndTestImpact.testsettings = TraceAndTestImpact.testsettings
 	EndProjectSection
