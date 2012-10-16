@@ -9,14 +9,15 @@ Implemented Features:
 
 - Support for spell checking multiple languages.
    The checker checks for correct spelling in multiple configurable languages in the same text.
-- Configurable language support throuhg smarttags.
+- Configurable language support through smarttags.
 - Configuration of custom Dictionaries. 
-
-Todo:
-Bugfixing
 
 
 Changes:
+
+Configuration.cs
+
+A class with implementing a persistent Model for language configuration. 
 
 SpellingTagger.cs:
 

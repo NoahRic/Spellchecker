@@ -79,9 +79,8 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         {
             get
             {
-				var langs = SpellingTagger.Languages
-					.Split(new char[] { ';', ',' }, System.StringSplitOptions.RemoveEmptyEntries)
-					.Select(lang => new SpellLanguageSmartTagItem(lang.Split(':').First()))
+				var langs = Configuration.Languages
+					.Select(lang => new SpellLanguageSmartTagItem(lang.Culture.Name))
 					.ToList<ISmartTagAction>();
 
 				var addremove = new List<ISmartTagAction>();

@@ -91,6 +91,7 @@
     <Compile Include="SmartTag\AddRemoveWindow.xaml.cs">
       <DependentUpon>AddRemoveWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Spelling\Configuration.cs" />
     <Compile Include="Spelling\SpellingTagger.cs" />
     <Compile Include="Spelling\SpellingDictionaryService.cs" />
     <Compile Include="Squiggles\SquiggleTagger.cs" />
@@ -105,7 +106,6 @@
     <None Include="Dictionaries\_en-AU.dic" />
     <None Include="Dictionaries\_en-CA.dic" />
     <None Include="Dictionaries\_en-GB.dic" />
-    <None Include="Dictionaries\_en-UK.dic" />
     <None Include="Dictionaries\_es-ES.dic" />
     <None Include="Dictionaries\_it-IT.dic" />
     <None Include="source.extension.vsixmanifest">

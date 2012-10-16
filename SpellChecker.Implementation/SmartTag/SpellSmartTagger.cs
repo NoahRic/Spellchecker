@@ -166,15 +166,15 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             dictionaryActions.Add(new SpellDictionarySmartTagAction(word, _dictionary, "Add to dictionary", ignore: false));
             smartTagSets.Add(new SmartTagActionSet(dictionaryActions.AsReadOnly()));
 
-			var langs = SpellingTagger.Languages
-				.Split(new char[] { ';', ',' }, System.StringSplitOptions.RemoveEmptyEntries)
-				.Select(lang => lang.Split(':').First())
-				.Where(lang => lang[0] != '#')
-				.Select(lang => new SpellLanguageSmartTagItem(lang))
+			// add list of enabled languages
+			var langs = Configuration.Languages
+				.Where(lang => lang.Enabled)
+				.Select(lang => new SpellLanguageSmartTagItem(lang.Culture.Name))
 				.ToList<ISmartTagAction>();
 			langs.Insert(0, new SpellLanguageSmartTagItem("Languages:"));
 			smartTagSets.Add(new SmartTagActionSet(langs.AsReadOnly()));
 
+			// add Add or Remove Languages item
 			var addremove = new List<ISmartTagAction>();
 			addremove.Add(new SpellAddRemoveLanguageSmartTagAction());
 			smartTagSets.Add(new SmartTagActionSet(addremove.AsReadOnly()));

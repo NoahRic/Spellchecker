@@ -329,66 +329,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             }
         }
 
-		static string configDir = null;
-		public static string ConfigDirectory {
-			get {
-				if (configDir == null) {
-					var info = new System.IO.DirectoryInfo(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VisualStudioSpellChecker"));
-					if (!info.Exists) info.Create();
-					configDir = info.FullName;
-				}
-				return configDir;
-			}
-		}
-
-		const string DefaultLanguages = "en-US;#es-ES;#de-DE;#fr-FR;#en-AU:*;#en-CA:*;#en-GB:*;#it-IT:*"; // Insert custom default dictionaries from the Dictionaries folder that are included in the vsix in the dll path here. See syntax of the Languages Property.
-
-        static string languages = null;
-		// syntax:[#] culture { : dictionary-file } { ; [#] culture { : dictionary-file } } ), where dictionary-file is a filename of a dictionary file located in the ConfigDirectory. # entries are available but disabled.
-        public static string Languages {
-			get {
-				if (languages == null) {
-					var file = System.IO.Path.Combine(ConfigDirectory, "languages.config");
-					if (!System.IO.File.Exists(file)) languages = DefaultLanguages;
-					else languages = System.IO.File.ReadAllLines(file).FirstOrDefault() ?? "en-US";
-				}
-				return languages;
-			}
-			set {
-				languages = value;
-				var file = System.IO.Path.Combine(ConfigDirectory, "languages.config");
-				System.IO.File.WriteAllText(file, languages);
-			}
-		}
-
 		public static TimeSpan dt;
-
-		public static void ImportDic(string file) { // import dic files from NetSpell & ISpell
-			var newfile = System.IO.Path.Combine(SpellingTagger.ConfigDirectory, System.IO.Path.GetFileName(file));
-			newfile = System.IO.Path.ChangeExtension(newfile, "lex");
-			var ext = System.IO.Path.GetExtension(file);
-			if (ext == ".dic" && !File.Exists(newfile)) {
-				var lines = File.ReadAllLines(file)
-					.SkipWhile(s => s != "[Words]")
-					.Skip(1)
-					.Select(s => s.Split('/').First());
-				File.WriteAllLines(newfile, lines);
-			}
-		}
-
-		public static Uri ImportDefaultDictionaries(string culture) { // import default .dic & .lex files from config & dll directory.
-			var id = "_" + culture;
-			var configid = System.IO.Path.Combine(SpellingTagger.ConfigDirectory, id);
-			var dllid = System.IO.Path.Combine(Assembly.GetExecutingAssembly().CodeBase, id);
-
-			if (!File.Exists(configid + ".lex")) {
-				if (File.Exists(configid + ".dic")) ImportDic(configid + ".dic");
-				if (File.Exists(dllid + ".dic")) ImportDic(dllid + ".dic");
-				if (File.Exists(dllid + ".lex")) File.Copy(dllid + ".lex", configid + ".lex");
-			}
-			if (File.Exists(configid + ".lex")) return new Uri(configid + ".lex");
-			else return null;
-		}
 
         void CheckSpellings(IEnumerable<SnapshotSpan> dirtySpans)
         {
@@ -396,18 +337,12 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
             var textBoxes = new List<TextBox>();
 
-            foreach (var lang in Languages.Split(new char[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries).Where(l => !l.StartsWith("#"))) {
+            foreach (var lang in Configuration.Languages.Where(lang => lang.Enabled)) {
 				TextBox textBox = new TextBox();
-				var tokens = lang.Split(':');
-				textBox.Language = System.Windows.Markup.XmlLanguage.GetLanguage(tokens.First());
-				// support custom dictionaries. (with the Languages syntax : culture { : dictionary-file } { ; culture { : dictionary-file } } ), where dictionary-file is a filename of a dictionary file located in the ConfigDirectory.
-				// The dictionary file is a text file with one word per line.
+				textBox.Language = System.Windows.Markup.XmlLanguage.GetLanguage(lang.Culture.Name);
                 textBox.SpellCheck.IsEnabled = true;
-				foreach (var token in tokens.Skip(1)) {
-					Uri uri;
-					if (token == "*") uri = ImportDefaultDictionaries(tokens.First());
-					else uri = new Uri("file://" + ConfigDirectory.Replace("\\", "/") + "/" + token);
-					
+				foreach (var dict in lang.CustomDictionaries) {
+					Uri uri = Configuration.GetDictUri(lang, dict);
 					if (uri != null) textBox.SpellCheck.CustomDictionaries.Add(uri);
 				}
                 textBoxes.Add(textBox);
@@ -491,7 +426,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
 				int sentenceStart = 0;
 
-				foreach (var sentence in text.Split(new string[] { ". ", ", ", "; ", ": ", "? ", "! ", " \"", "\" ", "\".", "\",", "\";" }, StringSplitOptions.None)) {
+				foreach (var sentence in text.Split(new string[] { ". ", ", ", "; ", ": ", "? ", "! ", " \"", "\" ", "\".", "\",", "\";", "\"?", "\"!", "\":", " '", "' ", "'.", "', ", "';",  "':", "'?", "'!"}, StringSplitOptions.None)) {
 
 					if (string.IsNullOrWhiteSpace(sentence)) {
 						sentenceStart += sentence.Length + 2;

@@ -3,85 +3,85 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-			 xmlns:g="clr-namespace:System.Globalization;assembly=mscorlib"
+             xmlns:g="clr-namespace:System.Globalization;assembly=mscorlib"
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="500" Title="Add or Remove Language...">
-	<Window.Resources>
-		<ImageBrush x:Key="NationsGlobe" ImageSource="../Resources/globe.png" Opacity="0.5">
-			<ImageBrush.RelativeTransform>
-				<ScaleTransform ScaleX="0.8" ScaleY="0.8" CenterX="0.35" />
-			</ImageBrush.RelativeTransform>
-		</ImageBrush>
-	</Window.Resources>
-	<DockPanel Margin="20" Background="{StaticResource NationsGlobe}">
-		<ScrollViewer VerticalScrollBarVisibility="Auto" DockPanel.Dock="Top">
-			<StackPanel x:Name="panel">
-				<StackPanel.Resources>
-					<Style TargetType="{x:Type CheckBox}">
-						<Setter Property="FontSize" Value="14" />
-						<Setter Property="IsThreeState" Value="False" />
-						<Setter Property="ToolTip" Value="Use this language for spellchecking." />
- 					</Style>
-					<Style TargetType="{x:Type Rectangle}">
-						<Setter Property="Width" Value="24" />
-						<Setter Property="Height" Value="24" />
-					</Style>
-					<Style TargetType="{x:Type Button}">
-						<Setter Property="Width" Value="20" />
-					</Style>
-					<Style x:Key="ImageButton">
-						<Setter Property="Button.Width" Value="20" />
-						<Setter Property="Button.Height" Value="20" />
-						<Setter Property="Button.Background" Value="White" />
-						<Setter Property="Button.BorderBrush" Value="White" />
-						<Setter Property="Button.BorderThickness" Value="0" />
-					</Style>
-					<Style TargetType="{x:Type ToggleButton}">
-						<Setter Property="Width" Value="18" />
-						<Setter Property="Height" Value="18" />
-						<Setter Property="Margin" Value="3" />
-					</Style>
-					<Image x:Key="Minus" ToolTip="Delete this language entry">
-						<Image.Source>
-							<DrawingImage>
-								<DrawingImage.Drawing>
-									<GeometryDrawing Geometry="M 0,0 H 8">
-										<GeometryDrawing.Pen>
-											<Pen Brush="Gray" Thickness="2.2" />
-										</GeometryDrawing.Pen>
-									</GeometryDrawing>
-								</DrawingImage.Drawing>
-							</DrawingImage>
-						</Image.Source>
-					</Image>
-					<Image x:Key="Plus" ToolTip="Add a new language entry.">
-						<Image.Source>
-							<DrawingImage>
-								<DrawingImage.Drawing>
-									<GeometryDrawing Geometry="M 5,0 V 10 M 0,5 H 10">
-										<GeometryDrawing.Pen>
-											<Pen Brush="Gray" Thickness="2.2" />
-										</GeometryDrawing.Pen>
-									</GeometryDrawing>
-								</DrawingImage.Drawing>
-							</DrawingImage>
-						</Image.Source>
-					</Image>
-			
-				</StackPanel.Resources>
-				<StackPanel Orientation="Horizontal">
-					<Button x:Name="add" Content="{StaticResource Plus}" Margin="0 0 8 0"/>
-					<ComboBox x:Name="cultureSelector" DisplayMemberPath="EnglishName" SelectedIndex="0" Width="384">
-					</ComboBox>
-				</StackPanel>
-			</StackPanel>
-		</ScrollViewer>
-		
-		<StackPanel DockPanel.Dock="Bottom" VerticalAlignment="Bottom">
-			<StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom" Height="24"  HorizontalAlignment="Center">
-				<Button x:Name="save" Margin="20 0" Padding="20 0">Save</Button>
-				<Button x:Name="cancel" Margin="20 0" Padding="20 0">Cancel</Button>
-			</StackPanel>
-		</StackPanel>
-	</DockPanel>
+    <Window.Resources>
+        <ImageBrush x:Key="NationsGlobe" ImageSource="../Resources/globe.png" Opacity="0.2" AlignmentX="Center" AlignmentY="Bottom" 
+            TileMode="None" Stretch="Uniform" />
+    </Window.Resources>
+    <DockPanel Margin="20">
+        <StackPanel DockPanel.Dock="Bottom" VerticalAlignment="Bottom" Margin="0 10 0 0" Orientation="Vertical">
+            <TextBlock TextWrapping="Wrap" TextAlignment="Center" Margin="5">
+                For some laguguages, when not using custom dictionaries, it might be necessary to install the corresponding .NET 4 Language Pack.
+            </TextBlock>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom" Height="24"  HorizontalAlignment="Center">
+                <Button x:Name="save" Margin="20 0" Padding="20 0">Save</Button>
+                <Button x:Name="cancel" Margin="20 0" Padding="20 0">Cancel</Button>
+            </StackPanel>
+
+        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" DockPanel.Dock="Top"  Background="{StaticResource NationsGlobe}">
+            <StackPanel x:Name="panel">
+                <StackPanel.Resources>
+                    <Style TargetType="{x:Type CheckBox}">
+                        <Setter Property="FontSize" Value="14" />
+                        <Setter Property="IsThreeState" Value="False" />
+                        <Setter Property="ToolTip" Value="Use this language for spellchecking." />
+                    </Style>
+                    <Style TargetType="{x:Type Rectangle}">
+                        <Setter Property="Width" Value="24" />
+                        <Setter Property="Height" Value="24" />
+                    </Style>
+                    <Style TargetType="{x:Type Button}">
+                        <Setter Property="Width" Value="20" />
+                    </Style>
+                    <Style x:Key="ImageButton">
+                        <Setter Property="Button.Width" Value="20" />
+                        <Setter Property="Button.Height" Value="20" />
+                        <Setter Property="Button.Background" Value="White" />
+                        <Setter Property="Button.BorderBrush" Value="White" />
+                        <Setter Property="Button.BorderThickness" Value="0" />
+                    </Style>
+                    <Style TargetType="{x:Type ToggleButton}">
+                        <Setter Property="Width" Value="18" />
+                        <Setter Property="Height" Value="18" />
+                        <Setter Property="Margin" Value="3" />
+                    </Style>
+                    <Image x:Key="Minus" ToolTip="Delete this language entry">
+                        <Image.Source>
+                            <DrawingImage>
+                                <DrawingImage.Drawing>
+                                    <GeometryDrawing Geometry="M 0,0 H 8">
+                                        <GeometryDrawing.Pen>
+                                            <Pen Brush="Gray" Thickness="2.2" />
+                                        </GeometryDrawing.Pen>
+                                    </GeometryDrawing>
+                                </DrawingImage.Drawing>
+                            </DrawingImage>
+                        </Image.Source>
+                    </Image>
+                    <Image x:Key="Plus" ToolTip="Add a new language entry.">
+                        <Image.Source>
+                            <DrawingImage>
+                                <DrawingImage.Drawing>
+                                    <GeometryDrawing Geometry="M 5,0 V 10 M 0,5 H 10">
+                                        <GeometryDrawing.Pen>
+                                            <Pen Brush="Gray" Thickness="2.2" />
+                                        </GeometryDrawing.Pen>
+                                    </GeometryDrawing>
+                                </DrawingImage.Drawing>
+                            </DrawingImage>
+                        </Image.Source>
+                    </Image>
+            
+                </StackPanel.Resources>
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="add" Content="{StaticResource Plus}" Margin="0 0 8 0"/>
+                    <ComboBox x:Name="cultureSelector" DisplayMemberPath="EnglishName" SelectedIndex="0" Width="384">
+                    </ComboBox>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
 </Window>
