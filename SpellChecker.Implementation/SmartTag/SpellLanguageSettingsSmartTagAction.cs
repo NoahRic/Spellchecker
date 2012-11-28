@@ -56,13 +56,14 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         {
             get { return null; }
         }
-        
+
         /// <summary>
         /// This method is executed when action is selected in the context menu.
         /// </summary>
-        public void Invoke() {
-		
-		}
+        public void Invoke()
+        {
+
+        }
 
         /// <summary>
         /// Enable/disable this action.
@@ -79,18 +80,18 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         {
             get
             {
-				var langs = Configuration.Languages
-					.Select(lang => new SpellLanguageSmartTagItem(lang.Culture.Name))
-					.ToList<ISmartTagAction>();
+                var langs = Configuration.Languages
+                    .Select(lang => new SpellLanguageSmartTagItem(lang.Culture.Name))
+                    .ToList<ISmartTagAction>();
 
-				var addremove = new List<ISmartTagAction>();
-				addremove.Add(new SpellAddRemoveLanguageSmartTagAction());
+                var addremove = new List<ISmartTagAction>();
+                addremove.Add(new SpellAddRemoveLanguageSmartTagAction());
 
-				var sets = new List<SmartTagActionSet>();
-				sets.Add(new SmartTagActionSet(langs.AsReadOnly()));
-				sets.Add(new SmartTagActionSet(addremove.AsReadOnly()));
+                var sets = new List<SmartTagActionSet>();
+                sets.Add(new SmartTagActionSet(langs.AsReadOnly()));
+                sets.Add(new SmartTagActionSet(addremove.AsReadOnly()));
 
-				return sets.AsReadOnly();
+                return sets.AsReadOnly();
 
             }
         }

@@ -1,10 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpellChecker.Definitions", "SpellChecker.Definitions\SpellChecker.Definitions.csproj", "{87D22AC6-424B-48DD-A5E8-DCB7CB3DDD63}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpellChecker", "SpellChecker.Implementation\SpellChecker.csproj", "{34115C0C-E2B4-42D7-9B23-F613C042B416}"
-EndProject
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B3E23353-454E-40CD-8871-7D2EA1EC6355}"
 	ProjectSection(SolutionItems) = preProject
 		Local.testsettings = Local.testsettings
@@ -12,6 +8,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		SpellChecker.vsmdi = SpellChecker.vsmdi
 		TraceAndTestImpact.testsettings = TraceAndTestImpact.testsettings
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpellChecker.Definitions", "SpellChecker.Definitions\SpellChecker.Definitions.csproj", "{87D22AC6-424B-48DD-A5E8-DCB7CB3DDD63}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpellChecker", "SpellChecker.Implementation\SpellChecker.csproj", "{34115C0C-E2B4-42D7-9B23-F613C042B416}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpellChecker.Test", "Test\SpellChecker.Test.csproj", "{C1EDBDEC-D389-4EB1-8768-1D6F37C0B203}"
 EndProject

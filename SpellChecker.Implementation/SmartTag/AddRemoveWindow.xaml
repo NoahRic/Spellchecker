@@ -7,7 +7,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="500" Title="Add or Remove Language...">
     <Window.Resources>
-        <ImageBrush x:Key="NationsGlobe" ImageSource="../Resources/globe.png" Opacity="0.2" AlignmentX="Center" AlignmentY="Bottom" 
+        <ImageBrush x:Key="NationsGlobe" ImageSource="../Resources/globe.jpg" Opacity="0.2" AlignmentX="Center" AlignmentY="Bottom" 
             TileMode="None" Stretch="Uniform" />
     </Window.Resources>
     <DockPanel Margin="20">

@@ -58,16 +58,16 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         {
             get { return null; }
         }
-        
+
         /// <summary>
         /// This method is executed when action is selected in the context menu.
         /// </summary>
         public void Invoke()
         {
-			var window = new AddRemoveWindow();
-			window.Width = 500;
-			window.Height = 600;
-			window.Show();
+            var window = new AddRemoveWindow();
+            window.Width = 500;
+            window.Height = 600;
+            window.Show();
         }
 
         /// <summary>

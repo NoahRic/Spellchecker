@@ -66,7 +66,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         {
             get { return null; }
         }
-        
+
         /// <summary>
         /// This method is executed when action is selected in the context menu.
         /// </summary>

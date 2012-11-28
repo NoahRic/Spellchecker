@@ -37,12 +37,15 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// <param name="dictionary">The dictionary (used to ignore the word).</param>
         /// <param name="displayText">Text to show in the context menu for this action.</param>
         /// <param name="ignore">Whether this is to ignore the word or add it to the dictionary.</param>
-        public SpellLanguageSmartTagItem(string culture) {
-			if (culture.Length == 2 || culture.Length == 5 && culture[2] == '-') {
-				DisplayText = new System.Globalization.CultureInfo(culture).EnglishName;
-			} else {
-				DisplayText = culture;
-			}
+        public SpellLanguageSmartTagItem(string culture)
+        {
+            if (culture.Length == 2 || culture.Length == 5 && culture[2] == '-')
+            {
+                DisplayText = new System.Globalization.CultureInfo(culture).EnglishName;
+            } else
+            {
+                DisplayText = culture;
+            }
         }
         # endregion
 
@@ -63,7 +66,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         {
             get { return null; }
         }
-        
+
         /// <summary>
         /// This method is executed when action is selected in the context menu.
         /// </summary>
