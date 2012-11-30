@@ -73,7 +73,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         { // import default .dic & .lex files from config & dll directory.
             var id = "_" + culture;
             var configid = Path.Combine(ConfigDirectory, id);
-            var dllid = Path.Combine(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath, id);
+            var dllid = Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath), id);
 
             if (!File.Exists(configid + ".lex"))
             {
