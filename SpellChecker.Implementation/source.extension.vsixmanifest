@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Vsix xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="1.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2010">
-	<Identifier Id="SpellChecker">
-		<Name>Spell Checker</Name>
-		<Author>Roman Golovin, Michael Lehenbauer, Noah Richards</Author>
-		<Version>2.26</Version>
+	<Identifier Id="MultiLangSpellChecker">
+		<Name>Multi Language Spell Checker</Name>
+		<Author>David Egli</Author>
+		<Version>2.27</Version>
 		<Description xml:space="preserve">An editor extension that checks the spelling of comments, strings, and plaintext as you type.</Description>
 		<Locale>1033</Locale>
 		<MoreInfoUrl>http://blogs.msdn.com/noahric</MoreInfoUrl>

@@ -101,6 +101,7 @@
     <Compile Include="Spelling\Configuration.cs" />
     <Compile Include="Spelling\SpellingTagger.cs" />
     <Compile Include="Spelling\SpellingDictionaryService.cs" />
+    <Compile Include="Spelling\WordChecker.cs" />
     <Compile Include="Squiggles\SquiggleTagger.cs" />
     <Compile Include="Properties\FxCopSuppressions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -115,6 +116,7 @@
     <None Include="Dictionaries\_en-GB.dic" />
     <None Include="Dictionaries\_es-ES.dic" />
     <None Include="Dictionaries\_it-IT.dic" />
+    <None Include="Libraries\NHunspell.chm" />
     <None Include="source.extension.vsixmanifest">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
@@ -124,13 +126,16 @@
     <Content Include="BindingPaths.pkgdef">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Content Include="Libraries\Hunspellx64.dll" />
+    <Content Include="Libraries\Hunspellx86.dll" />
+    <Content Include="Libraries\NHunspell.dll" />
     <Content Include="ms-pl.txt">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Resource Include="Resources\cancel.gif" />
     <Resource Include="Resources\anchor.png" />
     <Resource Include="Resources\book_open.png" />
-    <Content Include="Resources\globe.jpg" />
+    <Resource Include="Resources\globe.jpg" />
     <Content Include="spell-icon.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
