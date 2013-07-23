@@ -13,6 +13,8 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
     public class Configuration
     {
 
+		 public static event EventHandler Changed;
+
         static string configDir = null;
         public static string ConfigDirectory
         {
@@ -49,6 +51,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                 languagesstring = value;
                 var file = Path.Combine(ConfigDirectory, "languages.config");
                 File.WriteAllText(file, languagesstring);
+					 if (Changed != null) Changed(null, EventArgs.Empty);
             }
         }
 
@@ -139,9 +142,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
                         sb.Append(':');
                         sb.Append(customDict);
                     }
-                    LanguagesString = sb.ToString();
                 }
-            }
+                LanguagesString = sb.ToString();
+           }
         }
 
         static LanguageCollection languages = null;
