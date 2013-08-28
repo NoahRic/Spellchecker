@@ -417,6 +417,10 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
 
 		  const int MinForeignWordSequence = 3; // the minimum number of words in another language in a sentence's part to not count as misspelled words.
 
+
+		 // This routine checks spelling per sentence in multiple languages. Normally it checks in one language until a misspelling is found. It the checks this word in the other languages and continues checking in that language.
+		// After checking the whole sentence, it chooses the language that has the most matches. If there are sequences of misspelling words that are longer than MinForeignWordSequence, and that are in the same language,
+		 // it does not treat those as misspellings.
 		  IEnumerable<MisspellingTag> GetMisspellingsInSpans(NormalizedSnapshotSpanCollection spans, List<TextBox> textBoxes)
 		  {
 				var currentLang = textBoxes.First();
