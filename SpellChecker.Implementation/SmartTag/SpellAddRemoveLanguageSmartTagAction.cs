@@ -24,28 +24,20 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
     /// <summary>
     /// Smart tag action for adding new words to the dictionary.
     /// </summary>
-    internal class SpellDictionarySmartTagAction : ISmartTagAction
+    internal class SpellAddRemoveLanguageSmartTagAction : ISmartTagAction
     {
-        #region Private data
-        private bool _ignore;
-        private string _word;
-        private ISpellingDictionary _dictionary;
-        #endregion
 
         #region Constructor
         /// <summary>
-        /// Constructor for SpellDictionarySmartTagAction.
+        /// Constructor for SpellAddRemoveLanguageSmartTagAction.
         /// </summary>
         /// <param name="word">The word to add or ignore.</param>
         /// <param name="dictionary">The dictionary (used to ignore the word).</param>
         /// <param name="displayText">Text to show in the context menu for this action.</param>
         /// <param name="ignore">Whether this is to ignore the word or add it to the dictionary.</param>
-        public SpellDictionarySmartTagAction(string word, ISpellingDictionary dictionary, string displayText, bool ignore)
+        public SpellAddRemoveLanguageSmartTagAction()
         {
-            _word = word;
-            _ignore = ignore;
-            _dictionary = dictionary;
-            DisplayText = displayText;
+            DisplayText = "Add or Remove Languages...";
         }
         # endregion
 
@@ -72,14 +64,10 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// </summary>
         public void Invoke()
         {
-            bool succeeded = false;
-
-            if (_ignore)
-                succeeded = _dictionary.IgnoreWord(_word);
-            else
-                succeeded = _dictionary.AddWordToDictionary(_word);
-
-            Debug.Assert(succeeded, "Call to modify dictionary was unsuccessful");
+            var window = new AddRemoveWindow();
+            window.Width = 500;
+            window.Height = 600;
+            window.Show();
         }
 
         /// <summary>

@@ -24,12 +24,9 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
     /// <summary>
     /// Smart tag action for adding new words to the dictionary.
     /// </summary>
-    internal class SpellDictionarySmartTagAction : ISmartTagAction
+    internal class SpellLanguageSmartTagItem : ISmartTagAction
     {
         #region Private data
-        private bool _ignore;
-        private string _word;
-        private ISpellingDictionary _dictionary;
         #endregion
 
         #region Constructor
@@ -40,12 +37,15 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// <param name="dictionary">The dictionary (used to ignore the word).</param>
         /// <param name="displayText">Text to show in the context menu for this action.</param>
         /// <param name="ignore">Whether this is to ignore the word or add it to the dictionary.</param>
-        public SpellDictionarySmartTagAction(string word, ISpellingDictionary dictionary, string displayText, bool ignore)
+        public SpellLanguageSmartTagItem(string culture)
         {
-            _word = word;
-            _ignore = ignore;
-            _dictionary = dictionary;
-            DisplayText = displayText;
+            if (culture.Length == 2 || culture.Length == 5 && culture[2] == '-')
+            {
+                DisplayText = new System.Globalization.CultureInfo(culture).EnglishName;
+            } else
+            {
+                DisplayText = culture;
+            }
         }
         # endregion
 
@@ -70,24 +70,14 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// <summary>
         /// This method is executed when action is selected in the context menu.
         /// </summary>
-        public void Invoke()
-        {
-            bool succeeded = false;
-
-            if (_ignore)
-                succeeded = _dictionary.IgnoreWord(_word);
-            else
-                succeeded = _dictionary.AddWordToDictionary(_word);
-
-            Debug.Assert(succeeded, "Call to modify dictionary was unsuccessful");
-        }
+        public void Invoke() { }
 
         /// <summary>
         /// Enable/disable this action.
         /// </summary>
         public bool IsEnabled
         {
-            get { return true; }
+            get { return false; }
         }
 
         /// <summary>

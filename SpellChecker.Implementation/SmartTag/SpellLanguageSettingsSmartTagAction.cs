@@ -13,6 +13,8 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+using System.Collections.Generic;
+using System.Linq;
 using System.Collections.ObjectModel;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
@@ -22,30 +24,18 @@ using System.Diagnostics;
 namespace Microsoft.VisualStudio.Language.Spellchecker
 {
     /// <summary>
-    /// Smart tag action for adding new words to the dictionary.
+    /// Smart tag action for language settings.
     /// </summary>
-    internal class SpellDictionarySmartTagAction : ISmartTagAction
+    internal class SpellLanguageSettingsSmartTagAction : ISmartTagAction
     {
-        #region Private data
-        private bool _ignore;
-        private string _word;
-        private ISpellingDictionary _dictionary;
-        #endregion
 
         #region Constructor
         /// <summary>
-        /// Constructor for SpellDictionarySmartTagAction.
+        /// Constructor for SpellLanguageSettingsSmartTagAction.
         /// </summary>
-        /// <param name="word">The word to add or ignore.</param>
-        /// <param name="dictionary">The dictionary (used to ignore the word).</param>
-        /// <param name="displayText">Text to show in the context menu for this action.</param>
-        /// <param name="ignore">Whether this is to ignore the word or add it to the dictionary.</param>
-        public SpellDictionarySmartTagAction(string word, ISpellingDictionary dictionary, string displayText, bool ignore)
+        public SpellLanguageSettingsSmartTagAction()
         {
-            _word = word;
-            _ignore = ignore;
-            _dictionary = dictionary;
-            DisplayText = displayText;
+            DisplayText = "Language Settings...";
         }
         # endregion
 
@@ -72,14 +62,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         /// </summary>
         public void Invoke()
         {
-            bool succeeded = false;
 
-            if (_ignore)
-                succeeded = _dictionary.IgnoreWord(_word);
-            else
-                succeeded = _dictionary.AddWordToDictionary(_word);
-
-            Debug.Assert(succeeded, "Call to modify dictionary was unsuccessful");
         }
 
         /// <summary>
@@ -97,7 +80,19 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         {
             get
             {
-                return null;
+                var langs = Configuration.Languages
+                    .Select(lang => new SpellLanguageSmartTagItem(lang.Culture.Name))
+                    .ToList<ISmartTagAction>();
+
+                var addremove = new List<ISmartTagAction>();
+                addremove.Add(new SpellAddRemoveLanguageSmartTagAction());
+
+                var sets = new List<SmartTagActionSet>();
+                sets.Add(new SmartTagActionSet(langs.AsReadOnly()));
+                sets.Add(new SmartTagActionSet(addremove.AsReadOnly()));
+
+                return sets.AsReadOnly();
+
             }
         }
         #endregion
