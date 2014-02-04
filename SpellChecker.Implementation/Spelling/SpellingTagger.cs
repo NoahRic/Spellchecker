@@ -329,6 +329,8 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         {
             TextBox textBox = new TextBox();
             textBox.SpellCheck.IsEnabled = true;
+            //Force English language
+            textBox.Language = XmlLanguage.GetLanguage("en-US");
 
             ITextSnapshot snapshot = _buffer.CurrentSnapshot;
 
