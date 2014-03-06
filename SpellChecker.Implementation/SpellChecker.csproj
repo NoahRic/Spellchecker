@@ -84,6 +84,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="NaturalTextTaggers\CommentTextTagger.cs" />
+    <Compile Include="NaturalTextTaggers\SpecFlowTextTagger.cs" />
     <Compile Include="NaturalTextTaggers\CSharp\CSharpCommentTextTagger.cs" />
     <Compile Include="NaturalTextTaggers\CSharp\LineProgress.cs" />
     <Compile Include="NaturalTextTaggers\CSharp\State.cs" />
