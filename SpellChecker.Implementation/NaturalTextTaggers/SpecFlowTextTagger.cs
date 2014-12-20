@@ -56,9 +56,11 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
             }
         }
 
-        #pragma warning disable 67
-        public event EventHandler<SnapshotSpanEventArgs> TagsChanged;
-        #pragma warning restore 67
-        #endregion
-    }
+        public event EventHandler<SnapshotSpanEventArgs> TagsChanged
+        {
+            add { }
+            remove { }
+		  }
+		  #endregion
+	 }
 }

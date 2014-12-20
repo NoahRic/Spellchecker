@@ -3,7 +3,7 @@
 	<Identifier Id="MultiLangSpellChecker">
 		<Name>Multi Language Spell Checker</Name>
 		<Author>David Egli</Author>
-		<Version>2.28</Version>
+		<Version>3.0</Version>
 		<Description xml:space="preserve">An editor extension that checks the spelling of comments, strings, and plaintext as you type.</Description>
 		<Locale>1033</Locale>
 		<MoreInfoUrl>http://blogs.msdn.com/noahric</MoreInfoUrl>
@@ -18,8 +18,17 @@
 			<VisualStudio Version="11.0">
 				<Edition>Pro</Edition>
 			</VisualStudio>
+			<VisualStudio Version="12.0">
+				<Edition>Pro</Edition>
+			</VisualStudio>
+			<VisualStudio Version="13.0">
+				<Edition>Pro</Edition>
+			</VisualStudio>
+			<VisualStudio Version="14.0">
+				<Edition>Pro</Edition>
+			</VisualStudio>
 		</SupportedProducts>
-		<SupportedFrameworkRuntimeEdition MinVersion="4.0" MaxVersion="4.0" />
+		<SupportedFrameworkRuntimeEdition MinVersion="4.0" MaxVersion="4.6" />
 		<SystemComponent>false</SystemComponent>
 	</Identifier>
 	<References />
