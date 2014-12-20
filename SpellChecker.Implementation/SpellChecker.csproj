@@ -2,176 +2,176 @@
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectTypeGuids>{82b43b9b-a64c-4715-b499-d71e9ca2bd60};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <ProjectGuid>{34115C0C-E2B4-42D7-9B23-F613C042B416}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SpellChecker</RootNamespace>
-    <AssemblyName>SpellChecker</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <GeneratePkgDefFile>false</GeneratePkgDefFile>
-    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <OldToolsVersion>4.0</OldToolsVersion>
-    <TargetFrameworkProfile />
+	 <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+	 <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+	 <SchemaVersion>2.0</SchemaVersion>
+	 <ProjectTypeGuids>{82b43b9b-a64c-4715-b499-d71e9ca2bd60};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+	 <ProjectGuid>{34115C0C-E2B4-42D7-9B23-F613C042B416}</ProjectGuid>
+	 <OutputType>Library</OutputType>
+	 <AppDesignerFolder>Properties</AppDesignerFolder>
+	 <RootNamespace>SpellChecker</RootNamespace>
+	 <AssemblyName>SpellChecker</AssemblyName>
+	 <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+	 <FileAlignment>512</FileAlignment>
+	 <GeneratePkgDefFile>false</GeneratePkgDefFile>
+	 <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
+	 <FileUpgradeFlags>
+	 </FileUpgradeFlags>
+	 <UpgradeBackupLocation>
+	 </UpgradeBackupLocation>
+	 <OldToolsVersion>4.0</OldToolsVersion>
+	 <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <StartAction>Program</StartAction>
-    <StartProgram>$(DevEnvDir)\devenv.exe</StartProgram>
-    <StartArguments>/rootsuffix Exp</StartArguments>
-    <Prefer32Bit>false</Prefer32Bit>
+	 <DebugSymbols>true</DebugSymbols>
+	 <DebugType>full</DebugType>
+	 <Optimize>false</Optimize>
+	 <OutputPath>bin\Debug\</OutputPath>
+	 <DefineConstants>DEBUG;TRACE</DefineConstants>
+	 <ErrorReport>prompt</ErrorReport>
+	 <WarningLevel>4</WarningLevel>
+	 <StartAction>Program</StartAction>
+	 <StartProgram>$(DevEnvDir)\devenv.exe</StartProgram>
+	 <StartArguments>/rootsuffix Exp</StartArguments>
+	 <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <StartAction>Program</StartAction>
-    <StartProgram>$(DevEnvDir)\devenv.exe</StartProgram>
-    <StartArguments>/rootsuffix Exp</StartArguments>
-    <Prefer32Bit>false</Prefer32Bit>
+	 <DebugType>pdbonly</DebugType>
+	 <Optimize>true</Optimize>
+	 <OutputPath>bin\Release\</OutputPath>
+	 <DefineConstants>TRACE</DefineConstants>
+	 <ErrorReport>prompt</ErrorReport>
+	 <WarningLevel>4</WarningLevel>
+	 <StartAction>Program</StartAction>
+	 <StartProgram>$(DevEnvDir)\devenv.exe</StartProgram>
+	 <StartArguments>/rootsuffix Exp</StartArguments>
+	 <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Microsoft.VisualStudio.CoreUtility, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Language.Intellisense, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Language.StandardClassification, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Data, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Logic, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="System">
-    </Reference>
-    <Reference Include="System.Core">
-    </Reference>
-    <Reference Include="System.ComponentModel.Composition">
-    </Reference>
-    <Reference Include="PresentationCore">
-    </Reference>
-    <Reference Include="PresentationFramework">
-    </Reference>
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xaml" />
-    <Reference Include="WindowsBase">
-    </Reference>
+	 <Reference Include="Microsoft.CSharp" />
+	 <Reference Include="Microsoft.VisualStudio.CoreUtility, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+		<Private>False</Private>
+	 </Reference>
+	 <Reference Include="Microsoft.VisualStudio.Language.Intellisense, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+		<Private>False</Private>
+	 </Reference>
+	 <Reference Include="Microsoft.VisualStudio.Language.StandardClassification, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+		<Private>False</Private>
+	 </Reference>
+	 <Reference Include="Microsoft.VisualStudio.Text.Data, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+		<Private>False</Private>
+	 </Reference>
+	 <Reference Include="Microsoft.VisualStudio.Text.Logic, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+		<Private>False</Private>
+	 </Reference>
+	 <Reference Include="Microsoft.VisualStudio.Text.UI, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+		<Private>False</Private>
+	 </Reference>
+	 <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+		<Private>False</Private>
+	 </Reference>
+	 <Reference Include="System">
+	 </Reference>
+	 <Reference Include="System.Core">
+	 </Reference>
+	 <Reference Include="System.ComponentModel.Composition">
+	 </Reference>
+	 <Reference Include="PresentationCore">
+	 </Reference>
+	 <Reference Include="PresentationFramework">
+	 </Reference>
+	 <Reference Include="System.Windows.Forms" />
+	 <Reference Include="System.Xaml" />
+	 <Reference Include="WindowsBase">
+	 </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NaturalTextTaggers\CommentTextTagger.cs" />
-    <Compile Include="NaturalTextTaggers\SpecFlowTextTagger.cs" />
-    <Compile Include="NaturalTextTaggers\CSharp\CSharpCommentTextTagger.cs" />
-    <Compile Include="NaturalTextTaggers\CSharp\LineProgress.cs" />
-    <Compile Include="NaturalTextTaggers\CSharp\State.cs" />
-    <Compile Include="NaturalTextTaggers\HtmlTextTagger.cs" />
-    <Compile Include="NaturalTextTaggers\PlainTextTagger.cs" />
-    <Compile Include="SmartTag\SpellAddRemoveLanguageSmartTagAction.cs" />
-    <Compile Include="SmartTag\SpellLanguageSmartTagItem.cs" />
-    <Compile Include="SmartTag\SpellLanguageSettingsSmartTagAction.cs" />
-    <Compile Include="SmartTag\SpellDictionarySmartTagAction.cs" />
-    <Compile Include="SmartTag\SpellSmartTagger.cs" />
-    <Compile Include="SmartTag\SpellSmartTagAction.cs" />
-    <Compile Include="SmartTag\AddRemoveWindow.xaml.cs">
-      <DependentUpon>AddRemoveWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Spelling\Configuration.cs" />
-    <Compile Include="Spelling\SpellingTagger.cs" />
-    <Compile Include="Spelling\SpellingDictionaryService.cs" />
-    <Compile Include="Spelling\WordChecker.cs" />
-    <Compile Include="Squiggles\SquiggleTagger.cs" />
-    <Compile Include="Properties\FxCopSuppressions.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+	 <Compile Include="NaturalTextTaggers\CommentTextTagger.cs" />
+	 <Compile Include="NaturalTextTaggers\SpecFlowTextTagger.cs" />
+	 <Compile Include="NaturalTextTaggers\CSharp\CSharpCommentTextTagger.cs" />
+	 <Compile Include="NaturalTextTaggers\CSharp\LineProgress.cs" />
+	 <Compile Include="NaturalTextTaggers\CSharp\State.cs" />
+	 <Compile Include="NaturalTextTaggers\HtmlTextTagger.cs" />
+	 <Compile Include="NaturalTextTaggers\PlainTextTagger.cs" />
+	 <Compile Include="SmartTag\SpellAddRemoveLanguageSmartTagAction.cs" />
+	 <Compile Include="SmartTag\SpellLanguageSmartTagItem.cs" />
+	 <Compile Include="SmartTag\SpellLanguageSettingsSmartTagAction.cs" />
+	 <Compile Include="SmartTag\SpellDictionarySmartTagAction.cs" />
+	 <Compile Include="SmartTag\SpellSmartTagger.cs" />
+	 <Compile Include="SmartTag\SpellSmartTagAction.cs" />
+	 <Compile Include="SmartTag\AddRemoveWindow.xaml.cs">
+		<DependentUpon>AddRemoveWindow.xaml</DependentUpon>
+	 </Compile>
+	 <Compile Include="Spelling\Configuration.cs" />
+	 <Compile Include="Spelling\SpellingTagger.cs" />
+	 <Compile Include="Spelling\SpellingDictionaryService.cs" />
+	 <Compile Include="Spelling\WordChecker.cs" />
+	 <Compile Include="Squiggles\SquiggleTagger.cs" />
+	 <Compile Include="Properties\FxCopSuppressions.cs" />
+	 <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Dictionaries\Disabled\_de-DE.dic" />
-    <None Include="Dictionaries\Disabled\_en-US.dic" />
-    <None Include="Dictionaries\Disabled\_es-ES.dic" />
-    <None Include="Dictionaries\Disabled\_fr-FR.dic" />
-    <None Include="Dictionaries\_en-AU.dic" />
-    <None Include="Dictionaries\_en-CA.dic" />
-    <None Include="Dictionaries\_en-GB.dic" />
-    <None Include="Dictionaries\_es-ES.dic" />
-    <None Include="Dictionaries\_it-IT.dic" />
-    <None Include="Libraries\NHunspell.chm" />
-    <None Include="source.extension.vsixmanifest">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <SubType>Designer</SubType>
-    </None>
+	 <None Include="Dictionaries\Disabled\_de-DE.dic" />
+	 <None Include="Dictionaries\Disabled\_en-US.dic" />
+	 <None Include="Dictionaries\Disabled\_es-ES.dic" />
+	 <None Include="Dictionaries\Disabled\_fr-FR.dic" />
+	 <None Include="Dictionaries\_en-AU.dic" />
+	 <None Include="Dictionaries\_en-CA.dic" />
+	 <None Include="Dictionaries\_en-GB.dic" />
+	 <None Include="Dictionaries\_es-ES.dic" />
+	 <None Include="Dictionaries\_it-IT.dic" />
+	 <None Include="Libraries\NHunspell.chm" />
+	 <None Include="source.extension.vsixmanifest">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		<SubType>Designer</SubType>
+	 </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="BindingPaths.pkgdef">
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="Libraries\Hunspellx64.dll" />
-    <Content Include="Libraries\Hunspellx86.dll" />
-    <Content Include="Libraries\NHunspell.dll" />
-    <Content Include="ms-pl.txt">
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Resource Include="Resources\cancel.gif" />
-    <Resource Include="Resources\anchor.png" />
-    <Resource Include="Resources\book_open.png" />
-    <Resource Include="Resources\globe.jpg" />
-    <Content Include="spell-icon.png">
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="spell-screenshot.png">
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+	 <Content Include="BindingPaths.pkgdef">
+		<IncludeInVSIX>true</IncludeInVSIX>
+	 </Content>
+	 <Content Include="Libraries\Hunspellx64.dll" />
+	 <Content Include="Libraries\Hunspellx86.dll" />
+	 <Content Include="Libraries\NHunspell.dll" />
+	 <Content Include="ms-pl.txt">
+		<IncludeInVSIX>true</IncludeInVSIX>
+	 </Content>
+	 <Resource Include="Resources\cancel.gif" />
+	 <Resource Include="Resources\anchor.png" />
+	 <Resource Include="Resources\book_open.png" />
+	 <Resource Include="Resources\globe.jpg" />
+	 <Content Include="spell-icon.png">
+		<IncludeInVSIX>true</IncludeInVSIX>
+	 </Content>
+	 <Content Include="spell-screenshot.png">
+		<IncludeInVSIX>true</IncludeInVSIX>
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	 </Content>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SpellChecker.Definitions\SpellChecker.Definitions.csproj">
-      <Project>{87D22AC6-424B-48DD-A5E8-DCB7CB3DDD63}</Project>
-      <Name>SpellChecker.Definitions</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup</IncludeOutputGroupsInVSIX>
-    </ProjectReference>
+	 <ProjectReference Include="..\SpellChecker.Definitions\SpellChecker.Definitions.csproj">
+		<Project>{87D22AC6-424B-48DD-A5E8-DCB7CB3DDD63}</Project>
+		<Name>SpellChecker.Definitions</Name>
+		<IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup</IncludeOutputGroupsInVSIX>
+	 </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Page Include="SmartTag\AddRemoveWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
+	 <Page Include="SmartTag\AddRemoveWindow.xaml">
+		<SubType>Designer</SubType>
+		<Generator>MSBuild:Compile</Generator>
+		<Generator>MSBuild:Compile</Generator>
+		<SubType>Designer</SubType>
+	 </Page>
   </ItemGroup>
   <PropertyGroup>
-    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">12.0</VisualStudioVersion>
-    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+	 <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">12.0</VisualStudioVersion>
+	 <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v12.0\VSSDK\Microsoft.VsSDK.targets" Condition="false" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
+		 Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>
   <Target Name="AfterBuild">
