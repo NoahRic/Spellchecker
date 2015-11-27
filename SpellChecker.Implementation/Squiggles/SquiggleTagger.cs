@@ -60,7 +60,7 @@ namespace Microsoft.VisualStudio.Language.Spellchecker
         {
             public SpellingErrorClassificationFormatDefinition()
             {
-                this.ForegroundColor = Colors.Red;
+                this.ForegroundColor = Colors.Orange;
                 this.BackgroundCustomizable = false;
                 this.DisplayName = "Spelling Error";
             }
