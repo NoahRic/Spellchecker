@@ -3,7 +3,7 @@
 	<Identifier Id="MultiLangSpellChecker">
 		<Name>Multi Language Spell Checker</Name>
 		<Author>David Egli</Author>
-		<Version>3.01</Version>
+		<Version>3.02</Version>
 		<Description xml:space="preserve">An editor extension that checks the spelling of comments, strings, and plaintext as you type.</Description>
 		<Locale>1033</Locale>
 		<MoreInfoUrl>http://blogs.msdn.com/noahric</MoreInfoUrl>
